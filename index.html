@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>태양광 모니터링 파일 분석기 Lite</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--line:#dbe3ee;--text:#172033;--muted:#64748b;--primary:#1565c0;--primary2:#0d47a1;--ok:#138a54;--warn:#d97706;--err:#c62828;--check:#7c3aed;--obs:#475569;--shadow:0 10px 30px rgba(15,23,42,.08)}
+*{box-sizing:border-box}body{margin:0;font-family:"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select{font:inherit}button{cursor:pointer}.app{max-width:1480px;margin:0 auto;padding:20px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}.brand h1{margin:0;font-size:24px}.brand p{margin:5px 0 0;color:var(--muted);font-size:13px}.badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.badge{padding:6px 10px;border-radius:999px;background:#e8f1fd;color:#124e8c;font-size:12px;font-weight:700}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}.upload-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}.drop{min-height:170px;border:2px dashed #9fb5d0;border-radius:14px;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;background:#f8fbff;transition:.2s}.drop.drag{border-color:var(--primary);background:#eaf4ff}.drop h3{margin:0 0 8px}.drop p{margin:0 0 14px;color:var(--muted);font-size:13px}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:#e9eef5;color:#243247}.btn.primary{background:var(--primary);color:white}.btn.primary:hover{background:var(--primary2)}.btn.danger{background:#ffebee;color:#b71c1c}.btn.small{padding:6px 9px;font-size:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}.notice{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;color:#9a4b0b;font-size:13px;line-height:1.6}.files{display:grid;gap:10px;max-height:400px;overflow:auto}.file-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdff}.file-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.file-title{font-weight:800;word-break:break-all}.meta{font-size:12px;color:var(--muted);margin-top:5px}.type{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;background:#e7f5ee;color:#087443;white-space:nowrap}.type.inverter{background:#e9efff;color:#3152a4}.type.generic{background:#f1f5f9;color:#475569}.tabs{display:flex;gap:6px;overflow:auto;margin-bottom:16px}.tab{border:1px solid var(--line);background:white;padding:9px 14px;border-radius:10px;font-weight:700;color:#516176;white-space:nowrap}.tab.active{background:var(--primary);color:white;border-color:var(--primary)}.view{display:none}.view.active{display:block}.cards{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;margin-bottom:16px}.kpi{border:1px solid var(--line);border-radius:12px;padding:14px;background:white}.kpi .label{font-size:12px;color:var(--muted)}.kpi .value{font-size:24px;font-weight:900;margin-top:6px}.kpi.err .value{color:var(--err)}.kpi.warn .value{color:var(--warn)}.kpi.check .value{color:var(--check)}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.toolbar .grow{flex:1}.toolbar input,.toolbar select,.field input,.field select{border:1px solid var(--line);border-radius:9px;padding:9px;background:white}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:white;max-height:620px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 10px;border-bottom:1px solid #e8edf4;text-align:left;vertical-align:middle;white-space:nowrap}th{position:sticky;top:0;background:#eef4fb;z-index:2;font-weight:800}tr:hover td{background:#f8fbff}.sev{display:inline-block;padding:4px 7px;border-radius:999px;font-size:11px;font-weight:900}.sev.이상,.sev.긴급{background:#ffebee;color:var(--err)}.sev.주의{background:#fff4df;color:#a85b00}.sev.데이터확인{background:#f3e8ff;color:#6b21a8}.sev.관찰{background:#edf2f7;color:#475569}.sev.정상{background:#e7f7ee;color:var(--ok)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.section-title{margin:0 0 12px;font-size:17px}.chart-box{background:white;border:1px solid var(--line);border-radius:12px;padding:12px;min-height:360px}.chart-box canvas{width:100%;height:330px;display:block}.profile-controls{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;margin-bottom:12px}.profile-controls select,.profile-controls input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px}.mapping details{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:white}.mapping summary{padding:11px;font-weight:800;cursor:pointer}.mapping table select{min-width:150px;padding:5px;border:1px solid var(--line);border-radius:6px}.settings-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:12px;font-weight:800;color:#526176;margin-bottom:5px}.field input{width:100%}.status{font-size:13px;color:var(--muted);padding:10px 0}.progress{height:8px;background:#e8edf4;border-radius:999px;overflow:hidden}.progress>div{height:100%;width:0;background:linear-gradient(90deg,#1565c0,#43a5f5);transition:.2s}.empty{text-align:center;padding:48px 20px;color:var(--muted)}.hidden{display:none!important}.foot{font-size:12px;color:var(--muted);text-align:center;padding:8px 0 20px}.help{line-height:1.75;font-size:13px}.help h3{margin:16px 0 5px}.help code{background:#edf2f7;padding:2px 5px;border-radius:5px}.pill{padding:3px 7px;border-radius:6px;background:#eef3f8;font-size:11px}.right{text-align:right}.center{text-align:center}.wrap{white-space:normal;min-width:260px;line-height:1.45}.profile-bad td{background:#fff1f2}.profile-warn td{background:#fff8e8}@media(max-width:1050px){.upload-grid,.grid2{grid-template-columns:1fr}.cards{grid-template-columns:repeat(3,1fr)}.settings-grid{grid-template-columns:repeat(2,1fr)}.profile-controls{grid-template-columns:1fr 1fr}}@media(max-width:650px){.app{padding:10px}.top{align-items:flex-start;flex-direction:column}.cards{grid-template-columns:repeat(2,1fr)}.settings-grid,.profile-controls{grid-template-columns:1fr}.badges{justify-content:flex-start}}@media print{body{background:white}.no-print,.tabs,#uploadPanel,#mappingPanel,#settingsView,#helpView,.foot{display:none!important}.app{max-width:none;padding:0}.panel{box-shadow:none;border:0;padding:8px}.view{display:block!important}.table-wrap{max-height:none;overflow:visible;border:0}th{position:static}.chart-box{break-inside:avoid}.top{margin-bottom:5px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>태양광 모니터링 파일 분석기 Lite</h1><p>Python·설치·서버 없이 브라우저에서만 실행되는 오프라인 분석기</p></div>
+    <div class="badges"><span class="badge">완전 오프라인</span><span class="badge">XLSX / XLSM / CSV</span><span class="badge">v2.0.0 Lite</span></div>
+  </header>
+
+  <section class="panel no-print" id="uploadPanel">
+    <div class="upload-grid">
+      <div class="drop" id="dropZone">
+        <div><h3>Excel 파일을 여기에 놓으세요</h3><p>스트링 전류, 인버터 DC/AC, 출력·발전량 파일을 여러 개 동시에 선택할 수 있습니다.</p><button class="btn primary" id="pickBtn">파일 선택</button><input id="fileInput" type="file" accept=".xlsx,.xlsm,.csv" multiple hidden></div>
+      </div>
+      <div>
+        <div class="notice"><b>이번 Lite 버전에서 제거한 기능</b><br>일사량·기상청·POA·P90·발전소 위치·웹서버·Python·이력관리·외부 통신을 전부 제거했습니다. 날씨 자료가 없으므로 발전량 저하를 날씨와 설비 영향으로 완전히 분리하지는 않습니다.</div>
+        <div class="actions" style="margin-top:12px"><button class="btn primary" id="analyzeBtn" disabled>업로드 파일 분석</button><button class="btn" id="clearBtn">전체 초기화</button></div>
+        <div class="status" id="statusText">파일을 선택하세요.</div><div class="progress"><div id="progressBar"></div></div>
+      </div>
+    </div>
+    <div class="files" id="fileList" style="margin-top:14px"></div>
+  </section>
+
+  <section class="panel no-print mapping" id="mappingPanel"><h2 class="section-title">열 자동인식 / 수동 매핑</h2><p class="meta">자동인식이 맞으면 수정할 필요가 없습니다. 제조사별 열 이름이 다른 경우에만 역할을 변경한 후 다시 분석하세요.</p><div id="mappingList"></div></section>
+
+  <nav class="tabs no-print">
+    <button class="tab active" data-view="dashboardView">진단 요약</button><button class="tab" data-view="findingsView">진단 결과</button><button class="tab" data-view="intervalsView">이상 날짜·구간</button><button class="tab" data-view="profileView">일자별 24시간</button><button class="tab" data-view="reportView">보고서 출력</button><button class="tab" data-view="settingsView">판정 기준</button><button class="tab" data-view="helpView">사용법</button>
+  </nav>
+
+  <main>
+    <section class="view active" id="dashboardView"><div id="dashboardEmpty" class="panel empty">파일을 업로드하고 분석을 실행하세요.</div><div id="dashboardContent" class="hidden"><div class="cards" id="kpiCards"></div><div class="grid2"><div class="panel"><h2 class="section-title">채널·인버터 상태</h2><div class="table-wrap"><table><thead><tr><th>파일</th><th>대상</th><th>상태</th><th>최근 비율/효율</th><th>결손 후보</th></tr></thead><tbody id="assetSummaryBody"></tbody></table></div></div><div class="panel"><h2 class="section-title">우선 확인 항목</h2><div class="table-wrap"><table><thead><tr><th>등급</th><th>대상</th><th>내용</th></tr></thead><tbody id="topFindingBody"></tbody></table></div></div></div></div></section>
+
+    <section class="view" id="findingsView"><div class="panel"><div class="toolbar"><select id="findingSeverity"><option value="">전체 등급</option><option>이상</option><option>주의</option><option>데이터 확인</option><option>관찰</option></select><input class="grow" id="findingSearch" placeholder="파일·채널·원인 검색"><span class="pill" id="findingCount">0건</span></div><div class="table-wrap"><table><thead><tr><th>등급</th><th>파일</th><th>구분</th><th>대상</th><th>시작</th><th>종료</th><th>근거</th><th>가능 원인</th><th>권고</th></tr></thead><tbody id="findingBody"></tbody></table></div></div></section>
+
+    <section class="view" id="intervalsView"><div class="panel"><div class="toolbar"><select id="intervalSeverity"><option value="">전체 등급</option><option>이상</option><option>주의</option><option>데이터 확인</option></select><input class="grow" id="intervalSearch" placeholder="날짜·채널·구간 검색"><span class="pill" id="intervalCount">0건</span></div><div class="table-wrap"><table><thead><tr><th>등급</th><th>파일</th><th>구분</th><th>대상</th><th>시작</th><th>종료</th><th>지속</th><th>내용</th><th></th></tr></thead><tbody id="intervalBody"></tbody></table></div></div></section>
+
+    <section class="view" id="profileView"><div class="panel"><h2 class="section-title">날짜를 선택하면 00~23시 표와 그래프가 표시됩니다</h2><div class="profile-controls"><select id="profileDataset"></select><input id="profileDate" type="date"><select id="profileTarget"></select><button class="btn primary" id="showProfileBtn">조회</button></div><div class="grid2"><div class="chart-box"><canvas id="profileChart" width="900" height="430"></canvas></div><div class="table-wrap" style="max-height:430px"><table><thead id="profileHead"></thead><tbody id="profileBody"></tbody></table></div></div></div></section>
+
+    <section class="view" id="reportView"><div class="panel"><h2 class="section-title">보고서 저장·인쇄</h2><div class="actions"><button class="btn primary" id="exportExcelBtn">XLSX 보고서 저장</button><button class="btn" id="exportHtmlBtn">단독 HTML 보고서 저장</button><button class="btn" id="exportCsvBtn">진단결과 CSV 저장</button><button class="btn" id="exportJsonBtn">전체 JSON 저장</button><button class="btn" id="printBtn">인쇄 / PDF</button></div><div class="notice" style="margin-top:14px">XLSX 보고서는 별도 프로그램 없이 브라우저에서 직접 생성되며, 요약·진단결과·이상구간·스트링·인버터·날짜별 시트가 포함됩니다.</div></div></section>
+
+    <section class="view no-print" id="settingsView"><div class="panel"><h2 class="section-title">판정 기준</h2><div class="settings-grid" id="settingsGrid"></div><div class="actions" style="margin-top:14px"><button class="btn primary" id="applySettingsBtn">설정 적용 후 재분석</button><button class="btn" id="resetSettingsBtn">기본값 복원</button></div></div></section>
+
+    <section class="view no-print" id="helpView"><div class="panel help"><h2 class="section-title">사용법</h2><h3>1. 실행</h3><p>압축을 풀고 <code>SOLAR_ANALYZER.html</code>을 Chrome 또는 Edge에서 더블클릭합니다. Python 설치와 인터넷 연결이 필요하지 않습니다.</p><h3>2. 업로드</h3><p><code>.xlsx</code>, <code>.xlsm</code>, <code>.csv</code> 파일을 끌어놓거나 선택합니다. 구형 <code>.xls</code> 파일은 Excel에서 <code>.xlsx</code>로 저장한 후 사용하세요.</p><h3>3. 자동인식</h3><p>시간열, 스트링 전류, DC/AC 전압·전류·전력, 주파수, 발전량을 자동으로 인식합니다. 결과가 다르면 열 매핑에서 역할을 수정합니다.</p><h3>4. 진단 범위</h3><p>스트링은 동료 채널과 시기·시간대 패턴을 비교합니다. 인버터는 DC 입력 중 AC 정지, 3상 불평형, 전압·주파수 계측 배율, 출력·발전량 불일치를 검사합니다.</p><h3>5. 제한사항</h3><p>일사량과 동료 인버터가 없으면 날씨 영향과 설비 손실을 완전히 분리할 수 없습니다. 표시되는 결손값은 상대 비교 또는 전기량 모순에 근거한 <b>점검 후보</b>입니다.</p></div></section>
+  </main>
+  <div class="foot">모든 분석은 현재 브라우저 안에서만 수행되며 업로드 파일은 외부로 전송되지 않습니다.</div>
+</div>
+<script>
+(function(global){
+'use strict';
+
+const VERSION = '2.0.0-lite';
+const DEFAULT_SETTINGS = {
+  dayCurrentThreshold: 0.5,
+  stringWarningRatio: 0.80,
+  stringErrorRatio: 0.55,
+  stringZeroThreshold: 0.20,
+  minIntervalPoints: 2,
+  repeatedHourMinDays: 5,
+  repeatedHourRate: 0.30,
+  freqWarnLow: 59.8,
+  freqWarnHigh: 60.2,
+  freqErrorLow: 59.5,
+  freqErrorHigh: 60.5,
+  voltageImbalanceWarn: 3,
+  voltageImbalanceError: 5,
+  currentImbalanceWarn: 10,
+  currentImbalanceError: 20,
+  efficiencyWarnLow: 0.75,
+  efficiencyWarnHigh: 1.08,
+  powerEnergyMismatch: 0.40,
+  dcPresentKw: 5,
+  acZeroKw: 0.5
+};
+
+const ROLE_LABELS = {
+  ignore:'제외', timestamp:'시간', string_current:'스트링 전류',
+  dc_voltage:'DC 전압', dc_current:'DC 전류', dc_power:'DC 출력',
+  ac_voltage_r:'AC R상 전압', ac_voltage_s:'AC S상 전압', ac_voltage_t:'AC T상 전압',
+  frequency:'주파수', ac_current_r:'AC R상 전류', ac_current_s:'AC S상 전류', ac_current_t:'AC T상 전류',
+  ac_power:'AC 출력', energy:'발전량', generic_value:'일반 값'
+};
+
+function median(arr){
+  const a = arr.filter(Number.isFinite).sort((x,y)=>x-y);
+  if(!a.length) return NaN;
+  const m = Math.floor(a.length/2);
+  return a.length%2 ? a[m] : (a[m-1]+a[m])/2;
+}
+function quantile(arr,q){
+  const a=arr.filter(Number.isFinite).sort((x,y)=>x-y);
+  if(!a.length) return NaN;
+  const p=(a.length-1)*q, b=Math.floor(p), r=p-b;
+  return a[b+1]===undefined?a[b]:a[b]+r*(a[b+1]-a[b]);
+}
+function mean(arr){ const a=arr.filter(Number.isFinite); return a.length?a.reduce((s,v)=>s+v,0)/a.length:NaN; }
+function sum(arr){ return arr.filter(Number.isFinite).reduce((s,v)=>s+v,0); }
+function clamp(v,a,b){ return Math.min(b,Math.max(a,v)); }
+function pad2(v){ return String(v).padStart(2,'0'); }
+function dateKey(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function dateTimeText(d){ return `${dateKey(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function durationText(hours){
+  if(!Number.isFinite(hours)) return '';
+  if(hours<24) return `${hours.toFixed(hours<10?1:0)}시간`;
+  return `${(hours/24).toFixed(1)}일`;
+}
+function xmlDecode(s){
+  return String(s||'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&').replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi,(_,n)=>String.fromCharCode(parseInt(n,16)));
+}
+function normalize(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').replace(/[()\[\]{}]/g,' ').trim(); }
+function colIndexFromRef(ref){
+  const m=String(ref||'').match(/^([A-Z]+)/i); if(!m) return 0;
+  let n=0; for(const ch of m[1].toUpperCase()) n=n*26+ch.charCodeAt(0)-64; return n-1;
+}
+function parseAttributes(s){
+  const out={}; const re=/([\w:.-]+)="([^"]*)"/g; let m;
+  while((m=re.exec(s))) out[m[1]]=xmlDecode(m[2]);
+  return out;
+}
+function excelSerialToDate(v){
+  const totalMinutes=Math.round((Number(v)-25569)*1440);
+  const ms=totalMinutes*60000;
+  const u=new Date(ms);
+  if(!Number.isFinite(u.getTime())) return null;
+  return new Date(u.getUTCFullYear(),u.getUTCMonth(),u.getUTCDate(),u.getUTCHours(),u.getUTCMinutes(),u.getUTCSeconds());
+}
+function parseDateValue(v){
+  if(v instanceof Date && Number.isFinite(v.getTime())) return v;
+  if(typeof v==='number' && v>20000 && v<100000) return excelSerialToDate(v);
+  const s=String(v??'').trim(); if(!s) return null;
+  let m=s.match(/^(\d{4})[-./년\s]+(\d{1,2})[-./월\s]+(\d{1,2})(?:일)?(?:[ T\s]+(\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?)?$/);
+  if(m){ const d=new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0),+(m[6]||0)); return Number.isFinite(d.getTime())?d:null; }
+  const t=Date.parse(s); return Number.isFinite(t)?new Date(t):null;
+}
+function numeric(v){
+  if(typeof v==='number') return Number.isFinite(v)?v:NaN;
+  if(v===null||v===undefined||v==='') return NaN;
+  const x=Number(String(v).replace(/,/g,'').trim()); return Number.isFinite(x)?x:NaN;
+}
+function safeFileBase(s){ return String(s||'file').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]+/g,'_'); }
+
+async function readZipEntries(buffer, inflateRaw){
+  const bytes=new Uint8Array(buffer), dv=new DataView(buffer);
+  let eocd=-1;
+  for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) throw new Error('올바른 XLSX ZIP 구조가 아닙니다.');
+  const total=dv.getUint16(eocd+10,true), cdOffset=dv.getUint32(eocd+16,true);
+  let p=cdOffset; const entries=new Map(); const td=new TextDecoder('utf-8');
+  for(let i=0;i<total;i++){
+    if(dv.getUint32(p,true)!==0x02014b50) throw new Error('XLSX 중앙 디렉터리를 읽을 수 없습니다.');
+    const method=dv.getUint16(p+10,true), csize=dv.getUint32(p+20,true), usize=dv.getUint32(p+24,true);
+    const nlen=dv.getUint16(p+28,true), xlen=dv.getUint16(p+30,true), clen=dv.getUint16(p+32,true), local=dv.getUint32(p+42,true);
+    const name=td.decode(bytes.slice(p+46,p+46+nlen));
+    entries.set(name,{method,csize,usize,local}); p+=46+nlen+xlen+clen;
+  }
+  async function get(name){
+    const e=entries.get(name); if(!e) return null;
+    const lp=e.local; if(dv.getUint32(lp,true)!==0x04034b50) throw new Error('XLSX 로컬 파일 헤더 오류');
+    const nlen=dv.getUint16(lp+26,true), xlen=dv.getUint16(lp+28,true), start=lp+30+nlen+xlen;
+    const comp=bytes.slice(start,start+e.csize);
+    if(e.method===0) return comp;
+    if(e.method===8) return await inflateRaw(comp);
+    throw new Error(`지원하지 않는 XLSX 압축 방식입니다: ${e.method}`);
+  }
+  return {entries,get,text:async n=>{const u=await get(n); return u?td.decode(u):null;}};
+}
+
+function parseSharedStrings(xml){
+  if(!xml) return [];
+  const out=[]; const re=/<si\b[^>]*>([\s\S]*?)<\/si>/g; let m;
+  while((m=re.exec(xml))){
+    let s=''; const tr=/<t\b[^>]*>([\s\S]*?)<\/t>/g; let t;
+    while((t=tr.exec(m[1]))) s+=xmlDecode(t[1]);
+    out.push(s);
+  }
+  return out;
+}
+function parseStyles(xml){
+  const custom={}; if(!xml) return {dateStyles:new Set()};
+  let m; const nr=/<numFmt\b([^>]*)\/?\s*>/g;
+  while((m=nr.exec(xml))){ const a=parseAttributes(m[1]); if(a.numFmtId) custom[+a.numFmtId]=a.formatCode||''; }
+  const xfs=(xml.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/)||[])[1]||'';
+  const dateStyles=new Set(), built=new Set([14,15,16,17,18,19,20,21,22,27,28,29,30,31,32,33,34,35,36,45,46,47,50,51,52,53,54,55,56,57,58]);
+  const xr=/<xf\b([^>]*)\/?\s*>/g; let idx=0;
+  while((m=xr.exec(xfs))){
+    const a=parseAttributes(m[1]), id=+(a.numFmtId||0), fmt=(custom[id]||'').replace(/"[^"]*"/g,'').replace(/\[[^\]]*\]/g,'');
+    if(built.has(id)||(/[ydhms]/i.test(fmt)&&!/^general$/i.test(fmt))) dateStyles.add(idx);
+    idx++;
+  }
+  return {dateStyles};
+}
+function parseWorkbookSheets(wbXml,relsXml){
+  const rels={}; let m; const rr=/<Relationship\b([^>]*)\/?\s*>/g;
+  while((m=rr.exec(relsXml||''))){ const a=parseAttributes(m[1]); if(a.Id&&a.Target) rels[a.Id]=a.Target; }
+  const out=[]; const sr=/<sheet\b([^>]*)\/?\s*>/g;
+  while((m=sr.exec(wbXml||''))){ const a=parseAttributes(m[1]); const target=rels[a['r:id']]; if(target) out.push({name:a.name||'Sheet',path:target.startsWith('/')?target.slice(1):`xl/${target.replace(/^\.\//,'')}`}); }
+  return out;
+}
+function parseWorksheet(xml,shared,styles){
+  const rows=[]; let maxCol=0; const rr=/<row\b[^>]*>([\s\S]*?)<\/row>/g; let rm;
+  while((rm=rr.exec(xml||''))){
+    const arr=[]; const cr=/<c\b([^>]*)>([\s\S]*?)<\/c>/g; let cm;
+    while((cm=cr.exec(rm[1]))){
+      const a=parseAttributes(cm[1]), c=colIndexFromRef(a.r), body=cm[2], type=a.t||'', style=+(a.s||0);
+      let v=null;
+      if(type==='inlineStr'){
+        const ts=[...body.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(x=>xmlDecode(x[1])); v=ts.join('');
+      }else{
+        const vm=body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/); const raw=vm?xmlDecode(vm[1]):'';
+        if(type==='s') v=shared[+raw]??'';
+        else if(type==='b') v=raw==='1';
+        else if(type==='str') v=raw;
+        else if(raw!==''){
+          const n=Number(raw); v=Number.isFinite(n)?n:raw;
+          if(Number.isFinite(n)&&styles.dateStyles.has(style)) v=excelSerialToDate(n);
+        }
+      }
+      arr[c]=v; maxCol=Math.max(maxCol,c+1);
+    }
+    rows.push(arr);
+  }
+  for(const r of rows) r.length=maxCol;
+  return rows;
+}
+
+async function parseXlsx(name,buffer,inflateRaw){
+  const zip=await readZipEntries(buffer,inflateRaw);
+  const wbXml=await zip.text('xl/workbook.xml'), rels=await zip.text('xl/_rels/workbook.xml.rels');
+  if(!wbXml||!rels) throw new Error('XLSX 통합문서 정보를 찾을 수 없습니다.');
+  const sheets=parseWorkbookSheets(wbXml,rels); if(!sheets.length) throw new Error('XLSX 시트를 찾을 수 없습니다.');
+  const shared=parseSharedStrings(await zip.text('xl/sharedStrings.xml'));
+  const styles=parseStyles(await zip.text('xl/styles.xml'));
+  const parsed=[];
+  for(const sh of sheets){
+    const xml=await zip.text(sh.path); if(!xml) continue;
+    const matrix=parseWorksheet(xml,shared,styles);
+    if(matrix.length) parsed.push(buildDataset(name,sh.name,matrix));
+  }
+  if(!parsed.length) throw new Error('분석 가능한 XLSX 시트가 없습니다.');
+  return parsed;
+}
+function parseCsvText(text){
+  const first=(text.split(/\r?\n/,1)[0]||'');
+  const candidates=[',','\t',';']; let delim=','; let best=-1;
+  for(const d of candidates){ const n=first.split(d).length; if(n>best){best=n;delim=d;} }
+  const rows=[]; let row=[],field='',q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){ if(ch==='"'&&text[i+1]==='"'){field+='"';i++;} else if(ch==='"') q=false; else field+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===delim){row.push(field);field='';}
+    else if(ch==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field='';}
+    else field+=ch;
+  }
+  if(field||row.length){row.push(field);rows.push(row);}
+  return rows;
+}
+async function parseCsv(name,buffer){
+  let text=new TextDecoder('utf-8').decode(buffer);
+  if(text.includes('\uFFFD')){ try{text=new TextDecoder('euc-kr').decode(buffer);}catch(e){} }
+  return [buildDataset(name,'CSV',parseCsvText(text))];
+}
+
+function detectDataStart(matrix){
+  const lim=Math.min(matrix.length,30);
+  for(let r=0;r<lim;r++){
+    const row=matrix[r]||[]; const d=parseDateValue(row[0]);
+    let nums=0; for(let c=1;c<row.length;c++) if(Number.isFinite(numeric(row[c]))) nums++;
+    if(d&&nums>=1) return r;
+  }
+  for(let r=0;r<lim;r++){
+    const row=matrix[r]||[]; let nums=0; for(const v of row) if(Number.isFinite(numeric(v))) nums++;
+    if(nums>=Math.max(2,Math.floor(row.length/3))) return r;
+  }
+  return Math.min(1,matrix.length);
+}
+function buildHeaders(matrix,dataStart,maxCol){
+  const start=Math.max(0,dataStart-5), hrows=[];
+  for(let r=start;r<dataStart;r++){
+    const row=(matrix[r]||[]).slice(0,maxCol); let last=''; const ff=[];
+    for(let c=0;c<maxCol;c++){
+      let v=String(row[c]??'').trim(); if(v) last=v; else if(c>0) v=last; ff[c]=v;
+    }
+    hrows.push(ff);
+  }
+  const out=[];
+  for(let c=0;c<maxCol;c++){
+    const toks=[];
+    for(const hr of hrows){ const v=String(hr[c]||'').trim(); if(v&&!toks.includes(v)) toks.push(v); }
+    out[c]=toks.join(' ').trim()||`열 ${c+1}`;
+  }
+  return out;
+}
+function inferRole(header,index){
+  const s=normalize(header), compact=s.replace(/\s/g,'');
+  if(index===0||/(시간|일시|date|time|timestamp)/.test(s)) return 'timestamp';
+  if((/#\s*\d+/.test(header)||/(스트링|string|채널|channel)/.test(s))&&(/\ba\b|전류|amp/.test(s))) return 'string_current';
+  if(/(발전량|energy|kwh)/.test(s)) return 'energy';
+  if(/(주파수|frequency|hz)/.test(s)) return 'frequency';
+  const dc=/(태양전지|직류|\bdc\b|pv)/.test(s), ac=/(인버터|교류|\bac\b)/.test(s);
+  if(dc&&/(전압|voltage|\bv\b)/.test(s)) return 'dc_voltage';
+  if(dc&&/(전류|current|\ba\b|amp)/.test(s)) return 'dc_current';
+  if(dc&&/(출력|전력|power|kw)/.test(s)) return 'dc_power';
+  if(/(rs\/rn|r[- ]?상|l1|phase.?r)/.test(compact)&&/(전압|\bv\b|voltage)/.test(s)) return 'ac_voltage_r';
+  if(/(st\/sn|s[- ]?상|l2|phase.?s)/.test(compact)&&/(전압|\bv\b|voltage)/.test(s)) return 'ac_voltage_s';
+  if(/(tr\/tn|t[- ]?상|l3|phase.?t)/.test(compact)&&/(전압|\bv\b|voltage)/.test(s)) return 'ac_voltage_t';
+  if((/(\br\b|r[- ]?상|l1)/.test(s))&&/(전류|\ba\b|current)/.test(s)) return 'ac_current_r';
+  if((/(\bs\b|s[- ]?상|l2)/.test(s))&&/(전류|\ba\b|current)/.test(s)) return 'ac_current_s';
+  if((/(\bt\b|t[- ]?상|l3)/.test(s))&&/(전류|\ba\b|current)/.test(s)) return 'ac_current_t';
+  if((ac||/(인버터출력|acpower)/.test(compact))&&/(출력|전력|power|kw)/.test(s)) return 'ac_power';
+  if(/(전압|voltage)/.test(s)&&/(r|l1)/.test(s)) return 'ac_voltage_r';
+  if(/(전압|voltage)/.test(s)&&/(s|l2)/.test(s)) return 'ac_voltage_s';
+  if(/(전압|voltage)/.test(s)&&/(t|l3)/.test(s)) return 'ac_voltage_t';
+  if(/(출력|전력|power|kw)/.test(s)) return 'ac_power';
+  return 'generic_value';
+}
+function extractUnit(header){
+  const s=String(header||'');
+  if(/kwh/i.test(s)) return 'kWh'; if(/kw/i.test(s)) return 'kW'; if(/hz/i.test(s)) return 'Hz';
+  if(/\(\s*a\s*\)|\ba\b/i.test(s)) return 'A'; if(/\(\s*v\s*\)|\bv\b/i.test(s)) return 'V'; return '';
+}
+function buildDataset(fileName,sheetName,matrix){
+  const maxCol=Math.max(0,...matrix.map(r=>(r||[]).length));
+  const dataStart=detectDataStart(matrix), headers=buildHeaders(matrix,dataStart,maxCol);
+  const columns=headers.map((h,i)=>({index:i,name:h,role:inferRole(h,i),unit:extractUnit(h),channel:(h.match(/#\s*(\d+)/)||[])[1]||h}));
+  let timeCol=columns.find(c=>c.role==='timestamp')?.index??0;
+  const rows=[]; let invalidTime=0;
+  for(let r=dataStart;r<matrix.length;r++){
+    const src=matrix[r]||[]; let t=parseDateValue(src[timeCol]);
+    if(!t&&typeof src[timeCol]==='number') t=excelSerialToDate(src[timeCol]);
+    if(!t){ if(src.some(v=>v!==null&&v!==undefined&&v!=='')) invalidTime++; continue; }
+    const vals=Array(maxCol).fill(NaN); for(let c=0;c<maxCol;c++) vals[c]=numeric(src[c]);
+    rows.push({time:t,values:vals,sourceRow:r+1});
+  }
+  rows.sort((a,b)=>a.time-b.time);
+  const diffs=[]; for(let i=1;i<rows.length;i++){const d=(rows[i].time-rows[i-1].time)/60000;if(d>0&&d<1440)diffs.push(d);} const interval=median(diffs)||60;
+  const roles=columns.map(c=>c.role); let type='generic';
+  if(roles.filter(x=>x==='string_current').length>=2) type='string';
+  else if(roles.some(x=>['dc_power','ac_power','energy','frequency','ac_voltage_r','ac_current_r'].includes(x))) type='inverter';
+  return {id:`ds_${Math.random().toString(36).slice(2)}`,fileName,sheetName,type,headers,columns,rows,dataStart,invalidTime,intervalMinutes:interval,analysisMeta:{},_matrix:matrix};
+}
+function refreshDatasetRows(ds){
+  const matrix=ds._matrix||[], maxCol=ds.columns.length, timeCol=ds.columns.find(c=>c.role==='timestamp')?.index??0;
+  const rows=[]; let invalidTime=0;
+  for(let r=ds.dataStart;r<matrix.length;r++){const src=matrix[r]||[];let t=parseDateValue(src[timeCol]);if(!t&&typeof src[timeCol]==='number')t=excelSerialToDate(src[timeCol]);if(!t){if(src.some(v=>v!==null&&v!==undefined&&v!==''))invalidTime++;continue;}const vals=Array(maxCol).fill(NaN);for(let c=0;c<maxCol;c++)vals[c]=numeric(src[c]);rows.push({time:t,values:vals,sourceRow:r+1});}
+  rows.sort((a,b)=>a.time-b.time);const diffs=[];for(let i=1;i<rows.length;i++){const d=(rows[i].time-rows[i-1].time)/60000;if(d>0&&d<1440)diffs.push(d);}ds.rows=rows;ds.invalidTime=invalidTime;ds.intervalMinutes=median(diffs)||60;
+}
+
+function roleColumns(ds,role){ return ds.columns.filter(c=>c.role===role); }
+function firstRole(ds,role){ return roleColumns(ds,role)[0]||null; }
+function severityRank(s){ return ({'긴급':5,'이상':4,'주의':3,'데이터 확인':2,'관찰':1,'정상':0})[s]??0; }
+function makeFinding(o){
+  return Object.assign({id:`f_${Math.random().toString(36).slice(2)}`,severity:'주의',category:'진단',target:'',start:null,end:null,durationHours:0,metric:'',value:null,threshold:'',reason:'',causes:'',recommendation:'',confidence:'중간'},o);
+}
+function addDataQuality(ds,res){
+  if(!ds.rows.length){ res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'데이터',target:ds.sheetName,reason:'유효한 시간 데이터가 없습니다.',recommendation:'시간 열과 데이터 시작행을 확인하세요.'})); return; }
+  const seen=new Map(), dups=[];
+  for(const r of ds.rows){const k=r.time.getTime(); if(seen.has(k)) dups.push(r.time); else seen.set(k,1);}
+  if(dups.length) res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'데이터',target:ds.sheetName,start:dups[0],end:dups[dups.length-1],reason:`중복 시간 ${dups.length}건이 있습니다.`,causes:'수집자료 중복 또는 파일 병합 오류',recommendation:'중복행을 확인하고 한 건만 유지하세요.',confidence:'높음'}));
+  const gaps=[]; const base=ds.intervalMinutes;
+  for(let i=1;i<ds.rows.length;i++){const m=(ds.rows[i].time-ds.rows[i-1].time)/60000;if(m>base*1.5) gaps.push({start:ds.rows[i-1].time,end:ds.rows[i].time,min:m});}
+  if(gaps.length){
+    res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'데이터',target:ds.sheetName,start:gaps[0].start,end:gaps[gaps.length-1].end,reason:`기준 간격 ${base.toFixed(0)}분보다 큰 시간 누락 ${gaps.length}구간이 있습니다.`,causes:'통신 중단, 수집 누락 또는 파일 분할',recommendation:'누락 시간의 원시 데이터와 통신상태를 확인하세요.',confidence:'높음'}));
+    for(const g of gaps) res.intervals.push({dataset:ds.fileName,severity:'데이터 확인',category:'시간 누락',target:ds.sheetName,start:g.start,end:g.end,durationHours:g.min/60,reason:`${g.min.toFixed(0)}분 간격`});
+  }
+  if(ds.invalidTime) res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'데이터',target:ds.sheetName,reason:`시간을 해석하지 못한 행 ${ds.invalidTime}건을 제외했습니다.`,recommendation:'시간 표시 형식과 시간 열 매핑을 확인하세요.',confidence:'높음'}));
+}
+function peerMedianAt(row,cols,exclude){
+  const a=[]; for(const c of cols) if(c.index!==exclude){const v=row.values[c.index]; if(Number.isFinite(v)) a.push(v);} return median(a);
+}
+function collectIntervals(points, ds, target, category, settings){
+  const out=[]; let cur=[]; const maxGap=ds.intervalMinutes*1.6*60000;
+  function flush(){
+    if(cur.length>=settings.minIntervalPoints){
+      const start=cur[0].time,end=cur[cur.length-1].time; const sev=cur.some(x=>x.status==='이상')?'이상':'주의';
+      out.push({dataset:ds.fileName,severity:sev,category,target,start,end,durationHours:cur.length*ds.intervalMinutes/60,reason:`실제/기대 비율 중앙값 ${(median(cur.map(x=>x.ratio))*100).toFixed(1)}%`,points:cur.length});
+    } cur=[];
+  }
+  for(const p of points){
+    if(p.status==='정상'){flush();continue;}
+    if(cur.length&&p.time-cur[cur.length-1].time>maxGap) flush(); cur.push(p);
+  } flush(); return out;
+}
+function analyzeString(ds,res,settings){
+  const cols=roleColumns(ds,'string_current'); if(cols.length<2) return;
+  const dayT=settings.dayCurrentThreshold;
+  const stats=cols.map(c=>{const vals=ds.rows.map(r=>r.values[c.index]).filter(Number.isFinite);return {c,p95:quantile(vals,.95),max:Math.max(...vals.filter(Number.isFinite),0)};});
+  const active=stats.filter(x=>x.p95>=Math.max(0.5,dayT)).map(x=>x.c), inactive=stats.filter(x=>!active.includes(x.c)).map(x=>x.c);
+  for(const c of inactive){
+    res.channelSummaries.push({dataset:ds.fileName,channel:c.name,status:'설정 확인',baselineRatio:null,actualAh:0,expectedAh:0,lossAh:0,relativeLoss:null,anomalyHours:0});
+    res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'스트링',target:c.name,reason:'분석기간 전반에서 유효한 주간 전류가 거의 없습니다.',causes:'미사용 채널, 퓨즈/배선 단선, 센서 미결선',recommendation:'실제 사용 채널인지 결선도와 현장을 확인하세요.',confidence:'중간'}));
+  }
+  if(active.length<2){ res.findings.push(makeFinding({dataset:ds.fileName,severity:'데이터 확인',category:'스트링',target:ds.sheetName,reason:'비교 가능한 활성 스트링이 2개 미만입니다.',recommendation:'열 매핑과 사용 채널을 확인하세요.'})); return; }
+  const minT=ds.rows[0].time.getTime(), maxT=ds.rows[ds.rows.length-1].time.getTime();
+  const models={};
+  for(const c of active){
+    const byHour=Array.from({length:24},()=>[]), all=[];
+    for(const r of ds.rows){ const peer=peerMedianAt(r,active,c.index), v=r.values[c.index]; if(peer>=dayT&&Number.isFinite(v)){const ratio=v/peer;if(ratio>0.05&&ratio<5){byHour[r.time.getHours()].push(ratio);all.push(ratio);}} }
+    const fallback=clamp(quantile(all,.70)||median(all)||1,0.2,3);
+    models[c.index]={hour:byHour.map(a=>clamp(quantile(a,.70)||median(a)||fallback,0.2,3)),fallback};
+  }
+  ds.analysisMeta.string={active:active.map(c=>c.index),inactive:inactive.map(c=>c.index),models,settings:Object.assign({},settings)};
+  for(const c of active){
+    const pts=[]; let actualAh=0,expectedAh=0,lossAh=0; const dayMap=new Map(), hourMap=Array.from({length:24},()=>({validDays:new Set(),badDays:new Set(),ratios:[]}));
+    for(const r of ds.rows){
+      const peer=peerMedianAt(r,active,c.index), actual=r.values[c.index], br=models[c.index].hour[r.time.getHours()], expected=peer*br;
+      if(!(peer>=dayT&&expected>=dayT&&Number.isFinite(actual))) continue;
+      const ratio=actual/expected, status=ratio<settings.stringErrorRatio?'이상':ratio<settings.stringWarningRatio?'주의':'정상', deficit=Math.max(0,expected-actual), dk=dateKey(r.time);
+      actualAh+=actual*ds.intervalMinutes/60; expectedAh+=expected*ds.intervalMinutes/60; lossAh+=deficit*ds.intervalMinutes/60;
+      const p={time:r.time,actual,peer,expected,ratio,status,deficit}; pts.push(p);
+      if(!dayMap.has(dk)) dayMap.set(dk,[]); dayMap.get(dk).push(p);
+      const hm=hourMap[r.time.getHours()]; hm.validDays.add(dk); hm.ratios.push(ratio); if(status!=='정상') hm.badDays.add(dk);
+    }
+    ds.analysisMeta.string[c.index]={points:pts};
+    const anomaly=pts.filter(p=>p.status!=='정상'), recentStart=maxT-30*86400000, recent=pts.filter(p=>p.time.getTime()>=recentStart), recentRatio=median(recent.map(p=>p.ratio)), overallRatio=median(pts.map(p=>p.ratio));
+    const relLoss=expectedAh>0?lossAh/expectedAh:NaN; let status='정상'; if(recentRatio<settings.stringErrorRatio) status='이상'; else if(recentRatio<settings.stringWarningRatio) status='주의';
+    const summaryObj={dataset:ds.fileName,channel:c.name,status,baselineRatio:models[c.index].fallback,actualAh,expectedAh,lossAh,relativeLoss:relLoss,anomalyHours:anomaly.length*ds.intervalMinutes/60,recentRatio,overallRatio};
+    const intervals=collectIntervals(pts,ds,c.name,'스트링 저전류',settings); res.intervals.push(...intervals);
+    if(status!=='정상'){
+      const first=anomaly[0]?.time,last=anomaly[anomaly.length-1]?.time;
+      res.findings.push(makeFinding({dataset:ds.fileName,severity:status,category:'스트링 성능',target:c.name,start:first,end:last,durationHours:anomaly.length*ds.intervalMinutes/60,metric:'상대 전류',value:recentRatio,threshold:`주의 < ${(settings.stringWarningRatio*100).toFixed(0)}%, 이상 < ${(settings.stringErrorRatio*100).toFixed(0)}%`,reason:`최근 기대전류 대비 중앙값 ${(recentRatio*100).toFixed(1)}%, 전체 전류결손 ${lossAh.toFixed(1)}Ah로 분석됩니다.`,causes:'부분 음영, 오염, 접속저항, 퓨즈/배선 이상, 모듈 열화 또는 구성 차이',recommendation:'동일 시간대의 결선·음영·오염과 접속부 온도를 우선 점검하세요.',confidence:anomaly.length>=20?'높음':'중간'}));
+    }
+    // repeated hour groups
+    const badHours=[];
+    const splitTime=minT+(maxT-minT)*0.45;
+    for(let h=0;h<24;h++){
+      const hp=pts.filter(p=>p.time.getHours()===h), early=hp.filter(p=>p.time.getTime()<splitTime), late=hp.filter(p=>p.time.getTime()>=splitTime);
+      const lateBad=late.filter(p=>p.status!=='정상').length, earlyBad=early.filter(p=>p.status!=='정상').length;
+      const lateRate=late.length?lateBad/late.length:0, earlyRate=early.length?earlyBad/early.length:0, earlyMed=median(early.map(p=>p.ratio)), lateMed=median(late.map(p=>p.ratio));
+      const worsening=Number.isFinite(earlyMed)&&Number.isFinite(lateMed)&&(lateMed<earlyMed*0.88||lateRate>earlyRate+0.20);
+      if(lateBad>=settings.repeatedHourMinDays&&lateRate>=settings.repeatedHourRate&&worsening) badHours.push({h,n:late.length,bad:lateBad,rate:lateRate,ratio:lateMed,earlyRatio:earlyMed});
+    }
+    let group=[]; const groups=[]; function gh(){if(group.length)groups.push(group);group=[];}
+    for(const x of badHours){if(group.length&&x.h!==group[group.length-1].h+1)gh();group.push(x);}gh();
+    for(const g of groups){
+      const h1=g[0].h,h2=g[g.length-1].h, rate=mean(g.map(x=>x.rate)), ratio=median(g.map(x=>x.ratio));
+      const gp=pts.filter(p=>p.time.getTime()>=splitTime&&p.time.getHours()>=h1&&p.time.getHours()<=h2&&p.status!=='정상');
+      res.findings.push(makeFinding({dataset:ds.fileName,severity:ratio<settings.stringErrorRatio?'이상':'주의',category:'시간대 반복 저하',target:c.name,start:gp[0]?.time||new Date(splitTime),end:gp[gp.length-1]?.time||pts[pts.length-1]?.time,metric:`${pad2(h1)}~${pad2(h2)}시`,value:ratio,threshold:`후반기 반복률 ${(settings.repeatedHourRate*100).toFixed(0)}% 이상`,reason:`분석 후반기 ${pad2(h1)}~${pad2(h2)}시에 저전류가 유효일의 ${(rate*100).toFixed(1)}%에서 반복되며 이전 기간보다 악화됐습니다.`,causes:'고정 음영, 오후/오전 방향 장애물, 온도 영향, 특정 시간대 접속 불량',recommendation:'해당 시간대 현장 음영과 스트링 전류를 비교 측정하세요.',confidence:g.reduce((s,x)=>s+x.bad,0)>=20?'높음':'중간'}));
+    }
+    if(groups.length&&summaryObj.status==='정상') summaryObj.status='주의';
+    res.channelSummaries.push(summaryObj);
+    // daily summaries
+    for(const [day,a] of dayMap){
+      const exp=sum(a.map(x=>x.expected))*ds.intervalMinutes/60, act=sum(a.map(x=>x.actual))*ds.intervalMinutes/60;
+      res.dailySummaries.push({dataset:ds.fileName,date:day,target:c.name,type:'string',actual:act,expected:exp,loss:Math.max(0,exp-act),ratio:exp?act/exp:NaN,severity:(exp&&act/exp<settings.stringErrorRatio)?'이상':(exp&&act/exp<settings.stringWarningRatio)?'주의':'정상'});
+    }
+  }
+}
+function imbalance(vals){const a=vals.filter(Number.isFinite);const m=mean(a);return a.length>=2&&m?Math.max(...a.map(v=>Math.abs(v-m)))/m*100:NaN;}
+function conditionIntervals(ds,condition,category,target,severityFn,reasonFn){
+  const out=[];let cur=[];const gap=ds.intervalMinutes*1.6*60000;
+  function flush(){if(cur.length){const sev=severityFn(cur),start=cur[0].time,end=cur[cur.length-1].time;out.push({dataset:ds.fileName,severity:sev,category,target,start,end,durationHours:cur.length*ds.intervalMinutes/60,reason:reasonFn(cur)});}cur=[];}
+  for(const x of condition){if(!x.bad){flush();continue;}if(cur.length&&x.time-cur[cur.length-1].time>gap)flush();cur.push(x);}flush();return out;
+}
+function analyzeInverter(ds,res,settings){
+  const map={}; for(const role of Object.keys(ROLE_LABELS)){const c=firstRole(ds,role);if(c)map[role]=c.index;}
+  ds.analysisMeta.inverter={map,settings:Object.assign({},settings),rowStatus:new Map()};
+  const dp=map.dc_power, ap=map.ac_power, en=map.energy;
+  const effs=[]; if(dp!==undefined&&ap!==undefined){for(const r of ds.rows){const d=r.values[dp],a=r.values[ap];if(d>settings.dcPresentKw&&a>0&&a/d>0.2&&a/d<1.3)effs.push(a/d);}}
+  const baseEff=median(effs)||0.96; let totalEnergy=0,maxPower=0,potentialLoss=0;
+  for(const r of ds.rows){if(en!==undefined&&Number.isFinite(r.values[en]))totalEnergy+=Math.max(0,r.values[en]);if(ap!==undefined&&Number.isFinite(r.values[ap]))maxPower=Math.max(maxPower,r.values[ap]);}
+  const checks=[];
+  for(const r of ds.rows){
+    const issues=[]; const d=dp!==undefined?r.values[dp]:NaN,a=ap!==undefined?r.values[ap]:NaN,e=en!==undefined?r.values[en]:NaN;
+    if(Number.isFinite(d)&&Number.isFinite(a)&&d>settings.dcPresentKw&&a<settings.acZeroKw){issues.push({severity:'이상',category:'DC 입력 중 AC 정지',reason:`DC ${d.toFixed(1)}kW, AC ${a.toFixed(1)}kW`,loss:Math.max(0,d*baseEff-a)*ds.intervalMinutes/60});}
+    if(Number.isFinite(d)&&Number.isFinite(a)&&d>settings.dcPresentKw&&a>0){const ef=a/d;if(ef<settings.efficiencyWarnLow||ef>settings.efficiencyWarnHigh)issues.push({severity:'데이터 확인',category:'DC/AC 전력비',reason:`AC/DC ${(ef*100).toFixed(1)}%`});}
+    if(Number.isFinite(a)&&Number.isFinite(e)&&a>5){const expected=a*ds.intervalMinutes/60,m=Math.abs(e-expected)/Math.max(expected,1);if(m>settings.powerEnergyMismatch)issues.push({severity:'데이터 확인',category:'출력-발전량 불일치',reason:`출력기준 ${expected.toFixed(1)}kWh, 기록 ${e.toFixed(1)}kWh`});}
+    const vv=['ac_voltage_r','ac_voltage_s','ac_voltage_t'].map(x=>map[x]!==undefined?r.values[map[x]]:NaN), vi=imbalance(vv), vm=mean(vv);
+    const f=map.frequency!==undefined?r.values[map.frequency]:NaN;
+    const linkedScale=Number.isFinite(f)&&Number.isFinite(vm)&&Math.abs(f-60)>2&&Math.abs(vm-230)>20&&Math.abs((f/60)-(vm/230))<0.08;
+    if(linkedScale){
+      issues.push({severity:'데이터 확인',category:'전압·주파수 동시 배율/계측',reason:`전압 ${vm.toFixed(1)}V / 주파수 ${f.toFixed(2)}Hz`});
+    }else{
+      if(Number.isFinite(f)){
+        if(f<50||f>70)issues.push({severity:'데이터 확인',category:'주파수 배율/계측',reason:`${f.toFixed(2)}Hz`});
+        else if(f<settings.freqErrorLow||f>settings.freqErrorHigh)issues.push({severity:'이상',category:'주파수 이상',reason:`${f.toFixed(2)}Hz`});
+        else if(f<settings.freqWarnLow||f>settings.freqWarnHigh)issues.push({severity:'주의',category:'주파수 편차',reason:`${f.toFixed(2)}Hz`});
+      }
+      if(vv.filter(Number.isFinite).length>=2){if(vm<150||vm>300)issues.push({severity:'데이터 확인',category:'AC 전압 배율/계측',reason:`평균 ${vm.toFixed(1)}V`});else if(vi>settings.voltageImbalanceError)issues.push({severity:'이상',category:'AC 전압 불평형',reason:`${vi.toFixed(1)}%`});else if(vi>settings.voltageImbalanceWarn)issues.push({severity:'주의',category:'AC 전압 불평형',reason:`${vi.toFixed(1)}%`});}
+    }
+    const ii=['ac_current_r','ac_current_s','ac_current_t'].map(x=>map[x]!==undefined?r.values[map[x]]:NaN), ci=imbalance(ii);
+    if(mean(ii)>2){if(ci>settings.currentImbalanceError)issues.push({severity:'이상',category:'AC 전류 불평형',reason:`${ci.toFixed(1)}%`});else if(ci>settings.currentImbalanceWarn)issues.push({severity:'주의',category:'AC 전류 불평형',reason:`${ci.toFixed(1)}%`});}
+    if(issues.length){const top=issues.sort((x,y)=>severityRank(y.severity)-severityRank(x.severity))[0];ds.analysisMeta.inverter.rowStatus.set(r.time.getTime(),top);potentialLoss+=sum(issues.map(x=>x.loss||0));}
+    checks.push({time:r.time,issues,d,a,e});
+  }
+  const cats=[...new Set(checks.flatMap(x=>x.issues.map(i=>i.category)))];
+  for(const cat of cats){
+    const cond=checks.map(x=>{const i=x.issues.find(y=>y.category===cat);return {time:x.time,bad:!!i,issue:i};});
+    const iv=conditionIntervals(ds,cond,cat,ds.sheetName,a=>a.sort((x,y)=>severityRank(y.issue.severity)-severityRank(x.issue.severity))[0].issue.severity,a=>a.map(x=>x.issue.reason).slice(0,3).join(' / '));
+    res.intervals.push(...iv);
+    if(iv.length){const sev=iv.sort((a,b)=>severityRank(b.severity)-severityRank(a.severity))[0].severity;res.findings.push(makeFinding({dataset:ds.fileName,severity:sev,category:'인버터',target:cat,start:iv[0].start,end:iv[iv.length-1].end,durationHours:sum(iv.map(x=>x.durationHours)),reason:`${cat} 현상이 ${iv.length}개 구간에서 검출되었습니다.`,causes:cat.includes('불평형')?'계통 불평형, 상별 센서/배선 또는 단자 이상':cat.includes('계측')||cat.includes('불일치')||cat.includes('전력비')?'계측 주기 차이, 통신/스케일 또는 부분시간 집계':'인버터 정지, 보호동작 또는 AC 회로 이상',recommendation:cat.includes('계측')||cat.includes('불일치')||cat.includes('전력비')?'원시 계측주기와 통신·스케일 설정을 확인하세요.':'인버터 이벤트로그, 차단기, 계통전압을 확인하세요.',confidence:'중간'}));}
+  }
+  res.inverterSummaries.push({dataset:ds.fileName,sheet:ds.sheetName,periodStart:ds.rows[0]?.time,periodEnd:ds.rows[ds.rows.length-1]?.time,intervalMinutes:ds.intervalMinutes,totalEnergy,maxPower,baselineEfficiency:baseEff,potentialLoss});
+  // daily inverter summary
+  const days=new Map(); for(const r of ds.rows){const k=dateKey(r.time);if(!days.has(k))days.set(k,[]);days.get(k).push(r);} for(const [k,a] of days){const energy=en!==undefined?sum(a.map(r=>r.values[en])):NaN, power=ap!==undefined?Math.max(...a.map(r=>r.values[ap]).filter(Number.isFinite),0):NaN;const sts=a.map(r=>ds.analysisMeta.inverter.rowStatus.get(r.time.getTime())?.severity||'정상');const sev=sts.sort((x,y)=>severityRank(y)-severityRank(x))[0];res.dailySummaries.push({dataset:ds.fileName,date:k,target:ds.sheetName,type:'inverter',actual:energy,expected:null,loss:null,ratio:null,severity:sev,maxPower:power});}
+}
+function analyzeGeneric(ds,res){
+  res.findings.push(makeFinding({dataset:ds.fileName,severity:'관찰',category:'일반 시계열',target:ds.sheetName,reason:'알려진 스트링 또는 인버터 형식으로 분류되지 않아 데이터 품질과 프로파일 조회만 제공합니다.',recommendation:'고급 열 매핑에서 시간·전류·전력·발전량 역할을 지정하세요.',confidence:'높음'}));
+}
+function dedupeFindings(findings){
+  const map=new Map();
+  for(const f of findings){const key=[f.dataset,f.category,f.target,f.start?dateTimeText(f.start):'',f.end?dateTimeText(f.end):''].join('|');const old=map.get(key);if(!old||severityRank(f.severity)>severityRank(old.severity))map.set(key,f);}
+  return [...map.values()].sort((a,b)=>severityRank(b.severity)-severityRank(a.severity)||((a.start?.getTime()||0)-(b.start?.getTime()||0)));
+}
+function analyzeAll(datasets,userSettings){
+  const settings=Object.assign({},DEFAULT_SETTINGS,userSettings||{}), res={version:VERSION,generatedAt:new Date(),settings,datasets,findings:[],intervals:[],channelSummaries:[],inverterSummaries:[],dailySummaries:[],summary:{}};
+  for(const ds of datasets){addDataQuality(ds,res); if(ds.type==='string')analyzeString(ds,res,settings);else if(ds.type==='inverter')analyzeInverter(ds,res,settings);else analyzeGeneric(ds,res);}
+  res.findings=dedupeFindings(res.findings);res.intervals.sort((a,b)=>severityRank(b.severity)-severityRank(a.severity)||(a.start-b.start));
+  const allRows=sum(datasets.map(d=>d.rows.length)), starts=datasets.map(d=>d.rows[0]?.time).filter(Boolean), ends=datasets.map(d=>d.rows[d.rows.length-1]?.time).filter(Boolean);
+  res.summary={files:new Set(datasets.map(d=>d.fileName)).size,sheets:datasets.length,rows:allRows,start:starts.length?new Date(Math.min(...starts)):null,end:ends.length?new Date(Math.max(...ends)):null,findings:res.findings.length,error:res.findings.filter(f=>severityRank(f.severity)>=4).length,warning:res.findings.filter(f=>f.severity==='주의').length,dataCheck:res.findings.filter(f=>f.severity==='데이터 확인').length,potentialLossKwh:sum(res.inverterSummaries.map(x=>x.potentialLoss)),stringLossAh:sum(res.channelSummaries.map(x=>x.lossAh))};
+  return res;
+}
+function buildStringProfile(ds,date,channelIndex){
+  const meta=ds.analysisMeta.string;if(!meta||!meta[channelIndex])return [];
+  return meta[channelIndex].points.filter(p=>dateKey(p.time)===date).map(p=>({time:p.time,actual:p.actual,peer:p.peer,expected:p.expected,ratio:p.ratio,status:p.status,reason:p.status==='정상'?'':`기대 대비 ${(p.ratio*100).toFixed(1)}%`}));
+}
+function buildInverterProfile(ds,date){
+  const meta=ds.analysisMeta.inverter;if(!meta)return [];
+  const m=meta.map;
+  return ds.rows.filter(r=>dateKey(r.time)===date).map(r=>({time:r.time,dcPower:m.dc_power!==undefined?r.values[m.dc_power]:NaN,acPower:m.ac_power!==undefined?r.values[m.ac_power]:NaN,energy:m.energy!==undefined?r.values[m.energy]:NaN,frequency:m.frequency!==undefined?r.values[m.frequency]:NaN,status:meta.rowStatus.get(r.time.getTime())?.severity||'정상',reason:meta.rowStatus.get(r.time.getTime())?.reason||''}));
+}
+function availableDates(ds){return [...new Set(ds.rows.map(r=>dateKey(r.time)))].sort();}
+function updateColumnRole(ds,index,role){const idx=+index,c=ds.columns.find(x=>x.index===idx);if(!c)return;if(role==='timestamp'){for(const x of ds.columns)if(x.role==='timestamp')x.role='ignore';}c.role=role;refreshDatasetRows(ds);const roles=ds.columns.map(x=>x.role);ds.type=roles.filter(x=>x==='string_current').length>=2?'string':roles.some(x=>['dc_power','ac_power','energy','frequency','ac_voltage_r','ac_current_r'].includes(x))?'inverter':'generic';ds.analysisMeta={};}
+
+
+function crc32(bytes){
+  let c=0xffffffff;
+  for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^((c&1)?0xedb88320:0);}
+  return (c^0xffffffff)>>>0;
+}
+function u16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a;}
+function u32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a;}
+function concatBytes(parts){const n=parts.reduce((s,a)=>s+a.length,0),out=new Uint8Array(n);let p=0;for(const a of parts){out.set(a,p);p+=a.length;}return out;}
+function zipStore(fileMap){
+  const enc=new TextEncoder(),locals=[],centrals=[];let offset=0,count=0;
+  for(const [name,content] of Object.entries(fileMap)){
+    const nb=enc.encode(name),data=content instanceof Uint8Array?content:enc.encode(content),crc=crc32(data),flags=0x0800;
+    const local=concatBytes([u32(0x04034b50),u16(20),u16(flags),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),nb,data]);
+    const central=concatBytes([u32(0x02014b50),u16(20),u16(20),u16(flags),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(nb.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),nb]);
+    locals.push(local);centrals.push(central);offset+=local.length;count++;
+  }
+  const cd=concatBytes(centrals),eocd=concatBytes([u32(0x06054b50),u16(0),u16(0),u16(count),u16(count),u32(cd.length),u32(offset),u16(0)]);
+  return concatBytes([...locals,cd,eocd]);
+}
+function xesc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'');}
+function xcol(n){let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s;}
+function worksheetXml(rows){
+  const widths=[];for(const row of rows)row.forEach((v,i)=>widths[i]=Math.min(45,Math.max(widths[i]||8,String(v??'').length+2)));
+  const cols=widths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+  const body=rows.map((row,ri)=>`<row r="${ri+1}">${row.map((v,ci)=>{const r=xcol(ci)+(ri+1),style=ri===0?' s="1"':'';if(typeof v==='number'&&Number.isFinite(v))return `<c r="${r}"${style}><v>${v}</v></c>`;return `<c r="${r}" t="inlineStr"${style}><is><t xml:space="preserve">${xesc(v)}</t></is></c>`;}).join('')}</row>`).join('');
+  const end=rows.length, last=xcol(Math.max(0,(rows[0]||[]).length-1));
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${body}</sheetData>${end>1?`<autoFilter ref="A1:${last}${end}"/>`:''}</worksheet>`;
+}
+function createReportXlsx(analysis){
+  const s=analysis.summary;
+  const sheets=[
+    {name:'요약',rows:[['항목','값'],['프로그램 버전',analysis.version],['생성일',dateTimeText(analysis.generatedAt)],['파일 수',s.files],['시트 수',s.sheets],['데이터 행',s.rows],['기간 시작',s.start?dateTimeText(s.start):''],['기간 종료',s.end?dateTimeText(s.end):''],['이상',s.error],['주의',s.warning],['데이터 확인',s.dataCheck],['스트링 전류결손 후보(Ah)',s.stringLossAh],['인버터 손실후보(kWh)',s.potentialLossKwh],['해석 주의','일사량 자료가 없어 날씨 영향과 설비 손실을 완전히 분리하지 않음']]},
+    {name:'진단결과',rows:[['등급','파일','구분','대상','시작','종료','지속시간(h)','지표','값','판정기준','근거','가능원인','권고','신뢰도'],...analysis.findings.map(f=>[f.severity,f.dataset,f.category,f.target,f.start?dateTimeText(f.start):'',f.end?dateTimeText(f.end):'',f.durationHours,f.metric,Number.isFinite(f.value)?f.value:'',f.threshold,f.reason,f.causes,f.recommendation,f.confidence])]},
+    {name:'이상구간',rows:[['등급','파일','구분','대상','시작','종료','지속시간(h)','내용'],...analysis.intervals.map(f=>[f.severity,f.dataset,f.category,f.target,dateTimeText(f.start),dateTimeText(f.end),f.durationHours,f.reason])]},
+    {name:'스트링요약',rows:[['파일','채널','상태','기준비율','최근비율','전체비율','실제Ah','기대Ah','결손후보Ah','결손률','이상시간(h)'],...analysis.channelSummaries.map(x=>[x.dataset,x.channel,x.status,x.baselineRatio,x.recentRatio,x.overallRatio,x.actualAh,x.expectedAh,x.lossAh,x.relativeLoss,x.anomalyHours])]},
+    {name:'인버터요약',rows:[['파일','시트','기간시작','기간종료','간격(분)','발전량(kWh)','최대출력(kW)','기준 AC/DC','손실후보(kWh)'],...analysis.inverterSummaries.map(x=>[x.dataset,x.sheet,x.periodStart?dateTimeText(x.periodStart):'',x.periodEnd?dateTimeText(x.periodEnd):'',x.intervalMinutes,x.totalEnergy,x.maxPower,x.baselineEfficiency,x.potentialLoss])]},
+    {name:'날짜별요약',rows:[['파일','날짜','대상','유형','실제','기대','결손','비율','등급','최대출력'],...analysis.dailySummaries.map(x=>[x.dataset,x.date,x.target,x.type,x.actual,x.expected,x.loss,x.ratio,x.severity,x.maxPower])]},
+  ];
+  const contentTypes=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`;
+  const rootRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const workbook=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((x,i)=>`<sheet name="${xesc(x.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`;
+  const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="10"/><name val="Malgun Gothic"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="10"/><name val="Malgun Gothic"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="1F4E78"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border/><border><bottom style="thin"><color rgb="D9E2F3"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files={'[Content_Types].xml':contentTypes,'_rels/.rels':rootRels,'xl/workbook.xml':workbook,'xl/_rels/workbook.xml.rels':wbRels,'xl/styles.xml':styles};
+  sheets.forEach((sh,i)=>files[`xl/worksheets/sheet${i+1}.xml`]=worksheetXml(sh.rows));
+  return zipStore(files);
+}
+
+const api={VERSION,DEFAULT_SETTINGS,ROLE_LABELS,parseXlsx,parseCsv,buildDataset,analyzeAll,buildStringProfile,buildInverterProfile,availableDates,updateColumnRole,dateKey,dateTimeText,durationText,severityRank,safeFileBase,median,mean,sum,numeric,createReportXlsx};
+if(typeof module!=='undefined'&&module.exports) module.exports=api; else global.SolarCore=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+'use strict';
+const C=window.SolarCore; let datasets=[],analysis=null,currentProfile=[];
+const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const typeLabel=t=>t==='string'?'스트링 다채널':t==='inverter'?'인버터 DC/AC':'일반 시계열';
+function setStatus(t,p){$('statusText').textContent=t;$('progressBar').style.width=(p||0)+'%';}
+async function inflateRawBrowser(u8){if(!('DecompressionStream'in window))throw new Error('이 브라우저는 XLSX 압축해제를 지원하지 않습니다. 최신 Chrome 또는 Edge를 사용하세요.');const ds=new DecompressionStream('deflate-raw');const stream=new Blob([u8]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer());}
+async function handleFiles(fileList){
+  const files=[...fileList];if(!files.length)return;setStatus(`${files.length}개 파일을 읽는 중...`,5);
+  let done=0,errs=[];
+  for(const f of files){try{const ext=(f.name.split('.').pop()||'').toLowerCase(),buf=await f.arrayBuffer();let parsed;if(ext==='xlsx'||ext==='xlsm')parsed=await C.parseXlsx(f.name,buf,inflateRawBrowser);else if(ext==='csv')parsed=await C.parseCsv(f.name,buf);else throw new Error('지원 형식은 XLSX, XLSM, CSV입니다.');datasets.push(...parsed);}catch(e){errs.push(`${f.name}: ${e.message}`);}done++;setStatus(`${done}/${files.length} 파일 처리`,5+done/files.length*70);await new Promise(r=>setTimeout(r,0));}
+  renderFiles();renderMappings();$('analyzeBtn').disabled=!datasets.length;setStatus(errs.length?`읽기 완료. 오류 ${errs.length}건: ${errs.join(' / ')}`:`${datasets.length}개 시트를 읽었습니다. 분석을 실행하세요.`,100);
+}
+function renderFiles(){const box=$('fileList');if(!datasets.length){box.innerHTML='';return;}box.innerHTML=datasets.map(ds=>`<div class="file-card"><div class="file-head"><div><div class="file-title">${esc(ds.fileName)} · ${esc(ds.sheetName)}</div><div class="meta">${ds.rows.length.toLocaleString()}행 · ${ds.intervalMinutes.toFixed(0)}분 간격 · ${ds.rows[0]?C.dateKey(ds.rows[0].time):'-'} ~ ${ds.rows.length?C.dateKey(ds.rows[ds.rows.length-1].time):'-'}</div></div><div><span class="type ${ds.type}">${typeLabel(ds.type)}</span> <button class="btn danger small" onclick="removeDataset('${ds.id}')">삭제</button></div></div></div>`).join('');}
+window.removeDataset=id=>{datasets=datasets.filter(x=>x.id!==id);analysis=null;renderFiles();renderMappings();$('analyzeBtn').disabled=!datasets.length;clearResults();};
+function renderMappings(){const roles=Object.entries(C.ROLE_LABELS);$('mappingList').innerHTML=datasets.map(ds=>`<details><summary>${esc(ds.fileName)} · ${esc(ds.sheetName)} <span class="pill">${typeLabel(ds.type)}</span></summary><div class="table-wrap" style="max-height:330px"><table><thead><tr><th>열</th><th>원본 제목</th><th>자동/수동 역할</th><th>단위</th></tr></thead><tbody>${ds.columns.map(c=>`<tr><td>${c.index+1}</td><td class="wrap">${esc(c.name)}</td><td><select onchange="changeRole('${ds.id}',${c.index},this.value)">${roles.map(([v,l])=>`<option value="${v}" ${v===c.role?'selected':''}>${l}</option>`).join('')}</select></td><td>${esc(c.unit)}</td></tr>`).join('')}</tbody></table></div></details>`).join('');}
+window.changeRole=(id,i,role)=>{const ds=datasets.find(x=>x.id===id);if(ds){C.updateColumnRole(ds,i,role);analysis=null;renderFiles();renderMappings();clearResults();setStatus('열 역할이 변경되었습니다. 다시 분석하세요.',100);}};
+function readSettings(){const o={};document.querySelectorAll('[data-setting]').forEach(el=>o[el.dataset.setting]=Number(el.value));return o;}
+function runAnalysis(){if(!datasets.length)return;setStatus('진단 계산 중...',20);setTimeout(()=>{try{analysis=C.analyzeAll(datasets,readSettings());renderAll();setStatus(`분석 완료: 진단 ${analysis.findings.length}건, 이상구간 ${analysis.intervals.length}건`,100);activateView('dashboardView');}catch(e){console.error(e);setStatus('분석 오류: '+e.message,100);alert(e.stack||e.message);}},30);}
+function clearResults(){analysis=null;$('dashboardContent').classList.add('hidden');$('dashboardEmpty').classList.remove('hidden');['findingBody','intervalBody','assetSummaryBody','topFindingBody','profileBody'].forEach(id=>$(id).innerHTML='');drawEmptyChart('분석 후 날짜를 선택하세요.');}
+function sevClass(s){return String(s||'').replace(/\s/g,'');} function sevTag(s){return `<span class="sev ${sevClass(s)}">${esc(s)}</span>`;}
+function renderAll(){$('dashboardEmpty').classList.add('hidden');$('dashboardContent').classList.remove('hidden');renderDashboard();renderFindings();renderIntervals();renderProfileSelectors();}
+function renderDashboard(){const s=analysis.summary;const cards=[['파일',s.files,''],['데이터 행',s.rows.toLocaleString(),''],['이상',s.error,'err'],['주의',s.warning,'warn'],['데이터 확인',s.dataCheck,'check'],['진단 전체',s.findings,'']];$('kpiCards').innerHTML=cards.map(x=>`<div class="kpi ${x[2]}"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join('');
+ const rows=[];for(const x of analysis.channelSummaries)rows.push(`<tr><td>${esc(x.dataset)}</td><td>${esc(x.channel)}</td><td>${sevTag(x.status==='설정 확인'?'데이터 확인':x.status)}</td><td>${Number.isFinite(x.recentRatio)?(x.recentRatio*100).toFixed(1)+'%':'-'}</td><td>${Number.isFinite(x.lossAh)?x.lossAh.toFixed(1)+'Ah':'-'}</td></tr>`);for(const x of analysis.inverterSummaries)rows.push(`<tr><td>${esc(x.dataset)}</td><td>${esc(x.sheet)}</td><td>${sevTag('관찰')}</td><td>${Number.isFinite(x.baselineEfficiency)?(x.baselineEfficiency*100).toFixed(1)+'%':'-'}</td><td>${Number.isFinite(x.potentialLoss)?x.potentialLoss.toFixed(1)+'kWh':'-'}</td></tr>`);$('assetSummaryBody').innerHTML=rows.join('')||'<tr><td colspan="5">표시할 대상이 없습니다.</td></tr>';
+ $('topFindingBody').innerHTML=analysis.findings.slice(0,12).map(f=>`<tr><td>${sevTag(f.severity)}</td><td>${esc(f.target)}</td><td class="wrap">${esc(f.reason)}</td></tr>`).join('')||'<tr><td colspan="3">진단 항목이 없습니다.</td></tr>';}
+function renderFindings(){if(!analysis)return;const sev=$('findingSeverity').value,q=$('findingSearch').value.toLowerCase();const a=analysis.findings.filter(f=>(!sev||f.severity===sev)&&(!q||JSON.stringify(f).toLowerCase().includes(q)));$('findingCount').textContent=a.length+'건';$('findingBody').innerHTML=a.map(f=>`<tr><td>${sevTag(f.severity)}</td><td>${esc(f.dataset)}</td><td>${esc(f.category)}</td><td>${esc(f.target)}</td><td>${f.start?C.dateTimeText(f.start):'-'}</td><td>${f.end?C.dateTimeText(f.end):'-'}</td><td class="wrap">${esc(f.reason)}</td><td class="wrap">${esc(f.causes)}</td><td class="wrap">${esc(f.recommendation)}</td></tr>`).join('')||'<tr><td colspan="9">조건에 맞는 결과가 없습니다.</td></tr>';}
+function renderIntervals(){if(!analysis)return;const sev=$('intervalSeverity').value,q=$('intervalSearch').value.toLowerCase();const a=analysis.intervals.filter(f=>(!sev||f.severity===sev)&&(!q||JSON.stringify(f).toLowerCase().includes(q)));$('intervalCount').textContent=a.length+'건';$('intervalBody').innerHTML=a.slice(0,2000).map((f,i)=>`<tr><td>${sevTag(f.severity)}</td><td>${esc(f.dataset)}</td><td>${esc(f.category)}</td><td>${esc(f.target)}</td><td>${C.dateTimeText(f.start)}</td><td>${C.dateTimeText(f.end)}</td><td>${C.durationText(f.durationHours)}</td><td class="wrap">${esc(f.reason)}</td><td><button class="btn small" onclick="openIntervalProfile('${esc(f.dataset)}','${C.dateKey(f.start)}','${esc(f.target)}')">24시간 보기</button></td></tr>`).join('')+(a.length>2000?'<tr><td colspan="9">화면에는 2,000건까지만 표시합니다. 전체는 보고서로 저장하세요.</td></tr>':'');}
+window.openIntervalProfile=(file,date,target)=>{const ds=datasets.find(d=>d.fileName===file);if(!ds)return;activateView('profileView');$('profileDataset').value=ds.id;updateProfileTargets();$('profileDate').value=date;const opt=[...$('profileTarget').options].find(o=>o.textContent===target||o.value===target);if(opt)$('profileTarget').value=opt.value;showProfile();};
+function renderProfileSelectors(){const sel=$('profileDataset');sel.innerHTML=datasets.map(d=>`<option value="${d.id}">${esc(d.fileName)} · ${esc(d.sheetName)} (${typeLabel(d.type)})</option>`).join('');updateProfileTargets();}
+function updateProfileTargets(){const ds=datasets.find(d=>d.id===$('profileDataset').value)||datasets[0];if(!ds){$('profileTarget').innerHTML='';return;}const dates=C.availableDates(ds);$('profileDate').min=dates[0]||'';$('profileDate').max=dates[dates.length-1]||'';if(!$('profileDate').value||!dates.includes($('profileDate').value))$('profileDate').value=dates[dates.length-1]||'';if(ds.type==='string')$('profileTarget').innerHTML=ds.columns.filter(c=>c.role==='string_current').map(c=>`<option value="${c.index}">${esc(c.name)}</option>`).join('');else $('profileTarget').innerHTML='<option value="inverter">인버터 주요값</option>';}
+function showProfile(){if(!analysis)return alert('먼저 분석을 실행하세요.');const ds=datasets.find(d=>d.id===$('profileDataset').value),date=$('profileDate').value;if(!ds||!date)return;if(ds.type==='string'){const idx=Number($('profileTarget').value);currentProfile=C.buildStringProfile(ds,date,idx);$('profileHead').innerHTML='<tr><th>시간</th><th>실제 A</th><th>동료 중앙값</th><th>기대 A</th><th>실제/기대</th><th>판정</th></tr>';$('profileBody').innerHTML=currentProfile.map(x=>`<tr class="${x.status==='이상'?'profile-bad':x.status==='주의'?'profile-warn':''}"><td>${String(x.time.getHours()).padStart(2,'0')}:00</td><td>${x.actual.toFixed(2)}</td><td>${x.peer.toFixed(2)}</td><td>${x.expected.toFixed(2)}</td><td>${(x.ratio*100).toFixed(1)}%</td><td>${sevTag(x.status)}</td></tr>`).join('')||'<tr><td colspan="6">해당 날짜에 유효한 주간 데이터가 없습니다.</td></tr>';drawProfileChart(currentProfile,'string',ds.columns.find(c=>c.index===idx)?.name||'스트링');}else{currentProfile=C.buildInverterProfile(ds,date);$('profileHead').innerHTML='<tr><th>시간</th><th>DC kW</th><th>AC kW</th><th>발전량 kWh</th><th>주파수 Hz</th><th>판정</th></tr>';$('profileBody').innerHTML=currentProfile.map(x=>`<tr class="${x.status==='이상'?'profile-bad':x.status==='주의'?'profile-warn':''}"><td>${String(x.time.getHours()).padStart(2,'0')}:00</td><td>${Number.isFinite(x.dcPower)?x.dcPower.toFixed(2):'-'}</td><td>${Number.isFinite(x.acPower)?x.acPower.toFixed(2):'-'}</td><td>${Number.isFinite(x.energy)?x.energy.toFixed(2):'-'}</td><td>${Number.isFinite(x.frequency)?x.frequency.toFixed(2):'-'}</td><td>${sevTag(x.status)}</td></tr>`).join('')||'<tr><td colspan="6">해당 날짜 데이터가 없습니다.</td></tr>';drawProfileChart(currentProfile,'inverter','인버터');}}
+function drawEmptyChart(text){const cv=$('profileChart'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,w,h);ctx.fillStyle='#64748b';ctx.font='16px Malgun Gothic';ctx.textAlign='center';ctx.fillText(text,w/2,h/2);}
+function drawProfileChart(data,type,title){const cv=$('profileChart'),ctx=cv.getContext('2d');const rect=cv.getBoundingClientRect();cv.width=Math.max(720,Math.floor(rect.width*devicePixelRatio));cv.height=Math.floor(360*devicePixelRatio);ctx.scale(devicePixelRatio,devicePixelRatio);const w=cv.width/devicePixelRatio,h=cv.height/devicePixelRatio;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);if(!data.length){drawEmptyChart('표시할 데이터가 없습니다.');return;}const pad={l:58,r:20,t:38,b:45},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b;let series=type==='string'?[{k:'actual',n:'실제',c:'#1565c0'},{k:'expected',n:'기대',c:'#ef6c00'},{k:'peer',n:'동료 중앙값',c:'#2e7d32'}]:[{k:'dcPower',n:'DC 출력',c:'#ef6c00'},{k:'acPower',n:'AC 출력',c:'#1565c0'}];let max=0;for(const s of series)for(const d of data)if(Number.isFinite(d[s.k]))max=Math.max(max,d[s.k]);max=max||1;ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';ctx.font='11px Malgun Gothic';ctx.textAlign='right';for(let i=0;i<=5;i++){const y=pad.t+ph*i/5;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText((max*(1-i/5)).toFixed(max<10?1:0),pad.l-8,y+4);}ctx.textAlign='center';for(let hr=0;hr<24;hr+=3){const x=pad.l+pw*hr/23;ctx.fillText(String(hr).padStart(2,'0'),x,h-18);}for(const s of series){ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.beginPath();let started=false;for(const d of data){const v=d[s.k];if(!Number.isFinite(v))continue;const x=pad.l+pw*d.time.getHours()/23,y=pad.t+ph*(1-v/max);if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}ctx.stroke();}ctx.fillStyle='#172033';ctx.font='bold 15px Malgun Gothic';ctx.textAlign='left';ctx.fillText(`${title} · ${$('profileDate').value}`,pad.l,20);let lx=pad.l;ctx.font='12px Malgun Gothic';for(const s of series){ctx.fillStyle=s.c;ctx.fillRect(lx,28,12,3);ctx.fillStyle='#475569';ctx.fillText(s.n,lx+17,34);lx+=90;}}
+function settingsFields(){return [{k:'dayCurrentThreshold',l:'주간 전류 기준(A)',step:.1},{k:'stringWarningRatio',l:'스트링 주의 비율',step:.01},{k:'stringErrorRatio',l:'스트링 이상 비율',step:.01},{k:'minIntervalPoints',l:'최소 연속 포인트',step:1},{k:'repeatedHourMinDays',l:'시간대 반복 최소일',step:1},{k:'repeatedHourRate',l:'시간대 반복률',step:.05},{k:'freqWarnLow',l:'주파수 주의 하한',step:.01},{k:'freqWarnHigh',l:'주파수 주의 상한',step:.01},{k:'voltageImbalanceWarn',l:'전압 불평형 주의(%)',step:.5},{k:'currentImbalanceWarn',l:'전류 불평형 주의(%)',step:1},{k:'efficiencyWarnLow',l:'AC/DC 비율 하한',step:.01},{k:'powerEnergyMismatch',l:'출력-발전량 불일치',step:.05}];}
+function renderSettings(vals=C.DEFAULT_SETTINGS){$('settingsGrid').innerHTML=settingsFields().map(x=>`<div class="field"><label>${x.l}</label><input type="number" step="${x.step}" data-setting="${x.k}" value="${vals[x.k]}"></div>`).join('');}
+function activateView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));}
+function csvEscape(v){const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}function download(name,content,type){const blob=content instanceof Blob?content:new Blob([content],{type:type||'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+function exportCsv(){if(!analysis)return alert('분석 결과가 없습니다.');const h=['등급','파일','구분','대상','시작','종료','지속시간','근거','가능원인','권고'];const rows=analysis.findings.map(f=>[f.severity,f.dataset,f.category,f.target,f.start?C.dateTimeText(f.start):'',f.end?C.dateTimeText(f.end):'',f.durationHours,f.reason,f.causes,f.recommendation]);download('태양광_진단결과.csv','\ufeff'+[h,...rows].map(r=>r.map(csvEscape).join(',')).join('\r\n'),'text/csv;charset=utf-8');}
+function exportJson(){if(!analysis)return alert('분석 결과가 없습니다.');const clean=JSON.stringify(analysis,(k,v)=>k==='_matrix'||k==='analysisMeta'?undefined:v,2);download('태양광_분석결과.json',clean,'application/json;charset=utf-8');}
+function exportExcel(){if(!analysis)return alert('분석 결과가 없습니다.');const bytes=C.createReportXlsx(analysis);download('태양광_분석보고서.xlsx',new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));}
+function exportHtml(){if(!analysis)return alert('분석 결과가 없습니다.');const s=analysis.summary;const rows=analysis.findings.map(f=>`<tr><td>${esc(f.severity)}</td><td>${esc(f.dataset)}</td><td>${esc(f.category)}</td><td>${esc(f.target)}</td><td>${f.start?C.dateTimeText(f.start):''}</td><td>${esc(f.reason)}</td><td>${esc(f.recommendation)}</td></tr>`).join('');const html=`<!doctype html><meta charset="utf-8"><title>태양광 분석보고서</title><style>body{font-family:Malgun Gothic,Arial;margin:30px;color:#172033}h1{color:#0d47a1}.cards{display:flex;gap:10px;flex-wrap:wrap}.card{border:1px solid #ccd6e3;border-radius:10px;padding:12px;min-width:130px}.v{font-size:24px;font-weight:bold}table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px}th,td{border:1px solid #dbe3ee;padding:8px;text-align:left;vertical-align:top}th{background:#eef4fb}@media print{body{margin:10mm}}</style><h1>태양광 모니터링 파일 분석보고서</h1><p>생성: ${C.dateTimeText(analysis.generatedAt)} / 프로그램 ${analysis.version}</p><div class="cards"><div class="card">파일<div class="v">${s.files}</div></div><div class="card">데이터 행<div class="v">${s.rows}</div></div><div class="card">이상<div class="v">${s.error}</div></div><div class="card">주의<div class="v">${s.warning}</div></div><div class="card">데이터 확인<div class="v">${s.dataCheck}</div></div></div><h2>진단 결과</h2><table><thead><tr><th>등급</th><th>파일</th><th>구분</th><th>대상</th><th>시작</th><th>근거</th><th>권고</th></tr></thead><tbody>${rows}</tbody></table><p>주의: 일사량 자료가 없으므로 날씨 영향과 설비 손실을 완전히 분리하지 않습니다.</p>`;download('태양광_분석보고서.html',html,'text/html;charset=utf-8');}
+$('pickBtn').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>handleFiles(e.target.files);const dz=$('dropZone');['dragenter','dragover'].forEach(x=>dz.addEventListener(x,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(x=>dz.addEventListener(x,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));$('analyzeBtn').onclick=runAnalysis;$('clearBtn').onclick=()=>{datasets=[];analysis=null;$('fileInput').value='';renderFiles();renderMappings();clearResults();$('analyzeBtn').disabled=true;setStatus('초기화했습니다.',0);};document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>activateView(t.dataset.view));$('findingSeverity').onchange=renderFindings;$('findingSearch').oninput=renderFindings;$('intervalSeverity').onchange=renderIntervals;$('intervalSearch').oninput=renderIntervals;$('profileDataset').onchange=updateProfileTargets;$('showProfileBtn').onclick=showProfile;$('exportCsvBtn').onclick=exportCsv;$('exportJsonBtn').onclick=exportJson;$('exportExcelBtn').onclick=exportExcel;$('exportHtmlBtn').onclick=exportHtml;$('printBtn').onclick=()=>window.print();$('applySettingsBtn').onclick=runAnalysis;$('resetSettingsBtn').onclick=()=>renderSettings(C.DEFAULT_SETTINGS);renderSettings();drawEmptyChart('분석 후 날짜를 선택하세요.');
+</script>
+</body></html>
