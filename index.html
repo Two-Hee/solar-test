@@ -1,0 +1,1870 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>태양광발전 데이터 분석 (스트링특화) · 솔라데이터케어</title>
+<meta name="description" content="스트링별 모니터링 데이터를 올리면 저하 스트링과 손실량을 찾아냅니다. 파일은 브라우저 안에서만 처리되며 서버로 전송되지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>">
+<style>
+:root{
+  color-scheme: light dark;
+  --surface:#fcfcfb; --plane:#f9f9f7;
+  --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --neutral:#f0efec;
+  --h1:#86b6ef; --h2:#5598e7; --h3:#2a78d6; --h4:#1c5cab; --h5:#104281;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#2a78d6;
+  --warn-ink:#8a6100; --serious-ink:#a44a22;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    --surface:#1a1a19; --plane:#0d0d0d;
+    --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neutral:#383835;
+    --h1:#184f95; --h2:#256abf; --h3:#3987e5; --h4:#6da7ec; --h5:#9ec5f4;
+    --accent:#3987e5;
+    --warn-ink:#fab219; --serious-ink:#ec835a;
+  }
+}
+:root[data-theme="dark"]{
+  --surface:#1a1a19; --plane:#0d0d0d;
+  --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neutral:#383835;
+  --h1:#184f95; --h2:#256abf; --h3:#3987e5; --h4:#6da7ec; --h5:#9ec5f4;
+  --accent:#3987e5;
+  --warn-ink:#fab219; --serious-ink:#ec835a;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--plane); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI","Malgun Gothic","맑은 고딕",sans-serif;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+a{color:var(--accent)}
+
+/* ── 상단 바 ─────────────────────────────────────────── */
+.topbar{
+  border-bottom:1px solid var(--border); background:var(--surface);
+  position:sticky; top:0; z-index:20; backdrop-filter:saturate(180%) blur(6px);
+}
+.topbar .wrap{display:flex;align-items:center;gap:14px;height:60px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:640;letter-spacing:-.01em}
+.brand .mark{
+  width:26px;height:26px;border-radius:7px;flex:none;
+  background:linear-gradient(135deg,var(--s1),var(--s3));
+  display:grid;place-items:center;color:#fff;font-size:14px;font-weight:700
+}
+.brand small{display:block;font-size:11px;color:var(--muted);font-weight:450;line-height:1.2}
+.topbar .spacer{flex:1}
+.tbtn{
+  font:inherit;font-size:13px;cursor:pointer;padding:6px 12px;border-radius:8px;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink2)
+}
+.tbtn:hover{background:var(--plane);color:var(--ink)}
+
+/* ── 히어로 ──────────────────────────────────────────── */
+.hero{padding:56px 0 8px}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+  color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+  padding:4px 11px;border-radius:99px;letter-spacing:.01em
+}
+h1{
+  font-size:clamp(28px,4.4vw,44px); line-height:1.18; margin:16px 0 0;
+  font-weight:690; letter-spacing:-.028em
+}
+h1 .grad{
+  background:linear-gradient(100deg,var(--s1) 10%,var(--s3) 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+.lede{font-size:17px;color:var(--ink2);margin:16px 0 0;max-width:62ch}
+.hero-points{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.point{
+  font-size:12.5px;color:var(--ink2);border:1px solid var(--border);
+  background:var(--surface);border-radius:99px;padding:5px 12px
+}
+.point b{color:var(--ink);font-weight:620}
+
+/* ── 업로드 ──────────────────────────────────────────── */
+.drop{
+  margin:30px 0 0;padding:38px 24px;border-radius:14px;text-align:center;
+  border:2px dashed var(--axis);background:var(--surface);
+  transition:border-color .15s,background .15s
+}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface))}
+.drop h2{margin:0 0 6px;font-size:18px;font-weight:640}
+.drop p{margin:0;color:var(--ink2);font-size:13.5px}
+.btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.btn{
+  font:inherit;font-size:14px;font-weight:560;cursor:pointer;
+  padding:10px 20px;border-radius:9px;border:1px solid var(--border);
+  background:var(--surface);color:var(--ink)
+}
+.btn:hover{background:var(--plane)}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn:disabled{opacity:.5;cursor:default}
+.opt{
+  margin:18px auto 0;max-width:62ch;display:flex;align-items:center;gap:8px;
+  justify-content:center;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)
+}
+.opt label{font-weight:560;white-space:nowrap}
+.opt label span{color:var(--muted);font-weight:400}
+.opt input{
+  width:96px;font:inherit;font-size:13px;color:var(--ink);text-align:right;
+  background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 9px
+}
+.opt input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.opt .hint{color:var(--muted);flex:1;min-width:200px;text-align:left}
+.privacy{
+  margin:14px auto 0;max-width:60ch;font-size:12.5px;color:var(--muted);
+  display:flex;align-items:flex-start;gap:7px;justify-content:center;text-align:left
+}
+.privacy b{color:var(--ink2)}
+
+/* ── 상태 ────────────────────────────────────────────── */
+.status{margin-top:18px;font-size:13.5px;color:var(--ink2);text-align:center;min-height:22px}
+.status.err{color:var(--critical)}
+.spin{
+  display:inline-block;width:13px;height:13px;vertical-align:-2px;margin-right:7px;
+  border:2px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── 설명 카드 ───────────────────────────────────────── */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:44px 0 8px}
+.howcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.howcard .n{
+  width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);
+  font-size:12px;font-weight:700;margin-bottom:10px
+}
+.howcard h3{margin:0 0 5px;font-size:14.5px;font-weight:640}
+.howcard p{margin:0;font-size:13px;color:var(--ink2)}
+
+/* ── 리포트 공통 ─────────────────────────────────────── */
+#report{margin-top:8px}
+#report h2{font-size:17px;margin:40px 0 4px;font-weight:650;letter-spacing:-.01em}
+#report h3{font-size:14px;margin:18px 0 6px;font-weight:640}
+.note{color:var(--muted);font-size:12.5px;margin:6px 0 12px;max-width:88ch}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-top:18px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.tile .lab{color:var(--ink2);font-size:12px}
+.tile .val{font-size:26px;font-weight:650;margin-top:2px;letter-spacing:-.02em}
+.tile .unit{font-size:13px;color:var(--ink2);font-weight:400;margin-left:3px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--grid);white-space:nowrap}
+th{color:var(--ink2);font-weight:550;font-size:12px}
+td.l,th.l{text-align:left;white-space:normal}
+td.lc,th.lc{text-align:left;white-space:nowrap}
+tr.bad td{background:color-mix(in srgb,var(--critical) 6%,transparent)}
+.scroll{overflow-x:auto;padding-bottom:4px}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:12px;
+  padding:2px 8px;border-radius:99px;border:1px solid var(--border);white-space:nowrap
+}
+.chip i{font-style:normal;font-size:11px}
+.good{color:var(--good)}
+.warning{color:var(--warn-ink)}
+.serious{color:var(--serious-ink)}
+.critical{color:var(--critical)}
+.watch{color:var(--ink2)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:10px 0 2px;font-size:12px;color:var(--ink2)}
+.legend .k{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:14px;height:10px;border-radius:2px;display:inline-block}
+.legend i.ln{height:2px;border-radius:1px}
+svg{display:block}
+.cause{border-top:1px solid var(--grid);padding:14px 0 4px}
+.cause:first-child{border-top:none;padding-top:0}
+.chead{font-size:15px;font-weight:640;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chead .pat{font-size:12px;font-weight:500;color:var(--ink2);border:1px solid var(--border);border-radius:99px;padding:1px 9px}
+ol.hyp{margin:8px 0 0;padding-left:20px;font-size:13px}
+ol.hyp li{margin:0 0 9px}
+ol.hyp .why,ol.hyp .how{font-size:12px;color:var(--ink2);margin-top:2px}
+ol.hyp .how{color:var(--muted)}
+.caution{
+  margin-top:16px;padding:11px 14px;border-radius:9px;font-size:12.5px;
+  color:var(--ink2);border:1px solid var(--border);
+  background:color-mix(in srgb,var(--warning) 10%,transparent)
+}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--ink2);font-size:13px}
+ul.plain{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:13px}
+ul.plain li{margin:3px 0}
+dl.dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;font-size:13px;margin:0}
+dl.dl dt{color:var(--ink2)}
+dl.dl dd{margin:0}
+.tip{
+  position:fixed;pointer-events:none;opacity:0;transition:opacity .08s;
+  background:var(--surface);color:var(--ink);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;font-size:12px;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:99
+}
+.tip b{font-weight:620}
+
+/* ── 푸터 ────────────────────────────────────────────── */
+footer{margin-top:64px;border-top:1px solid var(--border);background:var(--surface)}
+footer .wrap{padding:26px 20px 40px;font-size:12.5px;color:var(--ink2)}
+footer .frow{display:flex;flex-wrap:wrap;gap:26px;justify-content:space-between}
+footer b{color:var(--ink);font-weight:620}
+footer .fill{color:var(--muted)}
+
+@media print{
+  .topbar,.drop,.how,.btnrow,.privacy,.status,.hero .badge{display:none!important}
+  body{background:#fff}
+  .card,.tile{break-inside:avoid}
+}
+@media (max-width:640px){
+  .hero{padding:34px 0 4px}
+  #report h2{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="mark">S</span>
+      <span>솔라데이터케어<small>SOLAR DATA CARE · SDC</small></span>
+    </div>
+    <span class="spacer"></span>
+    <button class="tbtn" id="themebtn" type="button">테마</button>
+    <button class="tbtn" id="printbtn" type="button">인쇄 · PDF</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="badge">◆ 스트링 특화 분석</span>
+    <h1>태양광발전<br><span class="grad">데이터 분석</span></h1>
+    <p class="lede">
+      스트링별 모니터링 데이터를 올리면 <b>어느 스트링이 언제부터 얼마나</b> 나빠졌는지 찾아냅니다.
+      일사량 센서가 없어도 됩니다 &mdash; 같은 인버터 안의 정상 스트링을 기준으로 삼아
+      날씨·계절 영향을 상쇄합니다.
+    </p>
+    <div class="hero-points">
+      <span class="point"><b>지속 저하</b> 상시 낮은 스트링</span>
+      <span class="point"><b>계단식 하락</b> 퓨즈·다이오드 고장</span>
+      <span class="point"><b>점진 열화</b> PID·오염 누적</span>
+      <span class="point"><b>시간대 편중</b> 음영·수목</span>
+      <span class="point"><b>동절기 한정</b> 결함 아닌 것 걸러내기</span>
+    </div>
+
+    <div class="drop" id="drop">
+      <h2>모니터링 데이터를 여기에 놓으세요</h2>
+      <p>엑셀(.xlsx) 또는 CSV · 스트링별 전류·출력·발전량 데이터</p>
+      <div class="btnrow">
+        <button class="btn primary" id="pickbtn" type="button">파일 선택</button>
+        <button class="btn" id="samplebtn" type="button">샘플 데이터로 체험</button>
+      </div>
+      <input type="file" id="file" accept=".xlsx,.xlsm,.csv" hidden>
+      <p class="opt">
+        <label for="volt">스트링 동작전압 <span>(선택)</span></label>
+        <input id="volt" type="text" inputmode="decimal" placeholder="예: 627" autocomplete="off">
+        <span class="hint">V — 전류(A) 데이터일 때 넣으면 손실을 kWh 로 환산합니다. 비워두면 전류비까지만 냅니다.</span>
+      </p>
+      <p class="privacy">
+        <span>🔒</span>
+        <span><b>파일은 서버로 전송되지 않습니다.</b> 모든 계산이 이 브라우저 안에서 끝나며,
+        페이지를 닫으면 아무것도 남지 않습니다. 발전소 데이터를 외부에 넘기지 않고 확인하실 수 있습니다.</span>
+      </p>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="howcard">
+      <div class="n">1</div><h3>컬럼을 알아서 읽습니다</h3>
+      <p>헤더 줄 수, 시간 컬럼 위치, 채널 번호 표기가 장비마다 달라도 데이터를 보고 추론합니다.
+      미사용 슬롯·복제 채널은 자동으로 제외합니다.</p>
+    </div>
+    <div class="howcard">
+      <div class="n">2</div><h3>정상 스트링을 기준으로 비교</h3>
+      <p>PI = 해당 스트링 발전량 ÷ 같은 인버터 정상 스트링의 <b>중앙값</b>.
+      평균이 아니라 중앙값을 쓰는 이유는 고장 채널이 기준을 오염시켜 자기 고장을 숨기기 때문입니다.</p>
+    </div>
+    <div class="howcard">
+      <div class="n">3</div><h3>원인과 확인 방법까지</h3>
+      <p>저하의 <b>모양</b>으로 원인을 좁힙니다. 하루 종일 고른 저하는 모듈·접속 결함,
+      특정 시간대만의 저하는 그림자. 현장에서 무엇을 확인할지 함께 냅니다.</p>
+    </div>
+  </section>
+
+  <div id="report"></div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <div>
+        <b>솔라데이터케어 (SDC)</b><br>
+        태양광 발전량 저하 진단 · 모니터링 데이터 분석<br>
+        <span class="fill">문의 ○○○-○○○○-○○○○ · ○○○@suncare.co.kr</span>
+      </div>
+      <div>
+        <b>이 도구에 대하여</b><br>
+        분석은 전부 브라우저에서 수행되며 데이터는 전송·저장되지 않습니다.<br>
+        <span class="fill">판정 결과는 참고 자료이며, 조치 전 현장 확인이 필요합니다.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════
+   태양광발전 데이터 분석 (스트링특화) — 브라우저 분석 엔진
+   데스크톱 파이썬 프로그램(pv_analyzer)의 peer 모드 경로를 옮긴 것.
+   외부 라이브러리 없음: 파일은 이 스크립트가 직접 파싱한다.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1) 파일 읽기 ────────────────────────────────────────────────────
+   xlsx 는 XML 을 담은 ZIP 이다. 브라우저의 DecompressionStream 으로
+   압축을 풀 수 있으므로 별도 라이브러리(900KB 급)를 붙이지 않는다.
+   외부 CDN 을 안 쓰면 홈페이지로 옮길 때도 파일 하나만 복사하면 된다. */
+
+const DEC = new TextDecoder();
+
+async function unzip(buf) {
+  const dv = new DataView(buf);
+  let eocd = -1;
+  const from = Math.max(0, buf.byteLength - 65558);
+  for (let i = buf.byteLength - 22; i >= from; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("엑셀 파일 구조를 읽을 수 없습니다 (ZIP 아님).");
+  const n = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const entries = {};
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true);
+    const csize = dv.getUint32(p + 20, true);
+    const nameLen = dv.getUint16(p + 28, true);
+    const extraLen = dv.getUint16(p + 30, true);
+    const cmtLen = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const name = DEC.decode(new Uint8Array(buf, p + 46, nameLen));
+    const lnLen = dv.getUint16(lho + 26, true);
+    const leLen = dv.getUint16(lho + 28, true);
+    entries[name] = { method, csize, dataOff: lho + 30 + lnLen + leLen };
+    p += 46 + nameLen + extraLen + cmtLen;
+  }
+  return { buf, entries };
+}
+
+async function zipText(zip, name) {
+  const e = zip.entries[name];
+  if (!e) return null;
+  const raw = new Uint8Array(zip.buf, e.dataOff, e.csize);
+  if (e.method === 0) return DEC.decode(raw);
+  if (typeof DecompressionStream === "undefined")
+    throw new Error("이 브라우저는 지원되지 않습니다. 크롬·엣지·사파리 최신 버전을 사용하세요.");
+  const s = new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return await new Response(s).text();
+}
+
+// 엑셀 내장 날짜 서식 번호. 이 서식이면 숫자를 날짜로 해석한다.
+const DATE_FMT_IDS = new Set([14,15,16,17,18,19,20,21,22,27,30,36,45,46,47,50,57]);
+
+function colIndex(ref) {           // "BC12" -> 54
+  let n = 0;
+  for (let i = 0; i < ref.length; i++) {
+    const c = ref.charCodeAt(i);
+    if (c < 65 || c > 90) break;
+    n = n * 26 + (c - 64);
+  }
+  return n - 1;
+}
+
+function serialToDate(v) {
+  // 엑셀 일련번호 -> Date. UTC 로 만들고 UTC 게터로만 읽어 시간대 이동을 없앤다.
+  return new Date(Math.round((v - 25569) * 86400000));
+}
+
+async function readXlsx(buf) {
+  const zip = await unzip(buf);
+
+  // 공유 문자열
+  const shared = [];
+  const ssXml = await zipText(zip, "xl/sharedStrings.xml");
+  if (ssXml) {
+    const doc = new DOMParser().parseFromString(ssXml, "application/xml");
+    for (const si of doc.getElementsByTagName("si")) {
+      let s = "";
+      for (const t of si.getElementsByTagName("t")) s += t.textContent;
+      shared.push(s);
+    }
+  }
+
+  // 서식 -> 날짜 여부
+  const isDateStyle = [];
+  const stXml = await zipText(zip, "xl/styles.xml");
+  if (stXml) {
+    const doc = new DOMParser().parseFromString(stXml, "application/xml");
+    const custom = {};
+    for (const f of doc.getElementsByTagName("numFmt")) {
+      const code = f.getAttribute("formatCode") || "";
+      custom[f.getAttribute("numFmtId")] =
+        /[yYmMdDhHsS]/.test(code.replace(/\[[^\]]*\]/g, "").replace(/"[^"]*"/g, ""));
+    }
+    const xfs = doc.getElementsByTagName("cellXfs")[0];
+    if (xfs) for (const xf of xfs.getElementsByTagName("xf")) {
+      const id = xf.getAttribute("numFmtId") || "0";
+      isDateStyle.push(DATE_FMT_IDS.has(+id) || custom[id] === true);
+    }
+  }
+
+  // 첫 시트 (워크북 순서 기준)
+  let target = "xl/worksheets/sheet1.xml", sheetName = "Sheet1";
+  const wbXml = await zipText(zip, "xl/workbook.xml");
+  const relXml = await zipText(zip, "xl/_rels/workbook.xml.rels");
+  if (wbXml && relXml) {
+    const wb = new DOMParser().parseFromString(wbXml, "application/xml");
+    const rel = new DOMParser().parseFromString(relXml, "application/xml");
+    const map = {};
+    for (const r of rel.getElementsByTagName("Relationship"))
+      map[r.getAttribute("Id")] = r.getAttribute("Target");
+    const sh = wb.getElementsByTagName("sheet")[0];
+    if (sh) {
+      sheetName = sh.getAttribute("name") || sheetName;
+      const rid = sh.getAttribute("r:id") || sh.getAttributeNS(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id");
+      let t = map[rid];
+      if (t) target = t.startsWith("/") ? t.slice(1) : ("xl/" + t.replace(/^\.\//, ""));
+    }
+  }
+
+  const shXml = await zipText(zip, target);
+  if (!shXml) throw new Error("시트를 찾을 수 없습니다.");
+  const doc = new DOMParser().parseFromString(shXml, "application/xml");
+
+  const grid = [];
+  let maxCol = 0;
+  for (const row of doc.getElementsByTagName("row")) {
+    const cells = [];
+    for (const c of row.getElementsByTagName("c")) {
+      const ref = c.getAttribute("r") || "";
+      const ci = ref ? colIndex(ref) : cells.length;
+      const t = c.getAttribute("t");
+      const sIdx = c.getAttribute("s");
+      let val = null;
+      if (t === "inlineStr") {
+        let s = ""; for (const tt of c.getElementsByTagName("t")) s += tt.textContent;
+        val = s;
+      } else {
+        const v = c.getElementsByTagName("v")[0];
+        if (v) {
+          const raw = v.textContent;
+          if (t === "s") val = shared[+raw] ?? "";
+          else if (t === "str" || t === "e") val = raw;
+          else if (t === "b") val = raw === "1";
+          else {
+            const num = parseFloat(raw);
+            val = (sIdx != null && isDateStyle[+sIdx] && isFinite(num) && num > 1)
+              ? serialToDate(num) : num;
+          }
+        }
+      }
+      while (cells.length < ci) cells.push(null);
+      cells[ci] = val;
+    }
+    maxCol = Math.max(maxCol, cells.length);
+    grid.push(cells);
+  }
+  for (const r of grid) while (r.length < maxCol) r.push(null);
+  return { grid, sheet: sheetName };
+}
+
+function readCsv(text) {
+  const clean = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+  const first = clean.slice(0, 4000);
+  const delim = [",", ";", "\t"].reduce((a, b) =>
+    (first.split(b).length > first.split(a).length ? b : a), ",");
+  const grid = [];
+  for (const line of clean.split("\n")) {
+    if (!line.trim()) continue;
+    const cells = []; let cur = "", q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (q) {
+        if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === delim) { cells.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    cells.push(cur);
+    grid.push(cells.map(s => { const v = s.trim(); return v === "" ? null : v; }));
+  }
+  const w = Math.max(...grid.map(r => r.length));
+  for (const r of grid) while (r.length < w) r.push(null);
+  return { grid, sheet: "CSV" };
+}
+
+/* ── 2) 컬럼 역할 추론 ───────────────────────────────────────────────
+   장비마다 헤더 줄 수도, 시간 컬럼 위치도, 채널 번호 표기도 다르다.
+   위치를 가정하지 않고 데이터를 보고 판정한다. */
+
+const METRIC_PATTERNS = [
+  ["frequency_hz", /(\bhz\b|주파수|frequency|freq\b)/i],
+  ["power_factor", /(역률|\bpf\b|power\s*factor)/i],
+  ["energy_kwh",   /(kwh|mwh|발전량|전력량|적산|누적)/i],
+  ["power_kw",     /(kw\b|mw\b|\bw\b|출력|유효전력|active\s*power|\bpac\b)/i],
+  ["current_a",    /(\(a\)|\ba\b|암페어|전류|current|\bidc\b|\bisc\b)/i],
+  ["voltage_v",    /(\(v\)|\bv\b|볼트|전압|voltage|\bvdc\b|\bvoc\b)/i],
+  ["temp_c",       /(℃|온도|temp|tmod|tamb)/i],
+  ["irradiance",   /(w\/m|일사|irrad|poa|insol)/i],
+];
+const META_RE    = /(인버터\s*번호|inverter\s*(no|id)|채널\s*수|channel\s*count|호기|번호$|no\.?$|순번|index|비고|remark)/i;
+const DERIVED_RE = /(\(계산\)|계산$|합계|소계|총계|평균$|중앙값|median|average\b|sum\b|비율|ratio|판정)/i;
+const CHAN_RES = [/(?:ch|채널|string|스트링|str)\s*[-_ ]?(\d{1,3})/i, /#\s*(\d{1,3})/, /inv\d+\s*[-_]\s*(\d{1,3})/i];
+const INV_RES  = [/(?:inv|인버터)\s*[-_ ]?(\d{1,3})/i, /(\d{1,3})\s*호기/];
+const COMMON_INTERVALS = [60, 300, 600, 900, 1800, 3600, 86400];
+
+const TS_FORMATS = [
+  /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?/,
+  /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/,
+  /^(\d{4})(\d{2})(\d{2})[ T]?(\d{2})(\d{2})(\d{2})?$/,
+];
+
+function parseTs(v) {
+  if (v instanceof Date) return isNaN(v) ? null : v;
+  if (typeof v === "number") return (v > 20000 && v < 80000) ? serialToDate(v) : null;
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  if (!s) return null;
+  for (const re of TS_FORMATS) {
+    const m = s.match(re);
+    if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)));
+  }
+  return null;
+}
+
+function asNum(v) {
+  if (typeof v === "boolean") return null;
+  if (typeof v === "number") return isFinite(v) ? v : null;
+  if (v instanceof Date) return null;
+  if (typeof v !== "string") return null;
+  const s = v.trim().replace(/,/g, "");
+  if (!s || ["-", "--", "N/A", "n/a", "NaN", "null", "#N/A"].includes(s)) return null;
+  const m = s.match(/^[+-]?\d*\.?\d+(?:[eE][+-]?\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+function findTimeColumn(grid, probe = 400) {
+  const nCols = grid[0].length;
+  let best = -1, bestHits = 0;
+  const rows = grid.slice(0, probe);
+  for (let c = 0; c < nCols; c++) {
+    let hits = 0;
+    for (const r of rows) if (parseTs(r[c])) hits++;
+    if (hits > bestHits) { best = c; bestHits = hits; }
+  }
+  if (best < 0 || bestHits < Math.min(grid.length, probe) * 0.3)
+    throw new Error("시간 컬럼을 찾을 수 없습니다. 날짜·시각이 담긴 열이 있는지 확인하세요.");
+  return best;
+}
+
+function findHeaderRows(grid, tsCol) {
+  for (let i = 0; i < grid.length; i++) if (parseTs(grid[i][tsCol])) return i;
+  return 0;
+}
+
+function buildLabels(grid, nHeader) {
+  // 2줄 헤더에서 상단이 병합셀이면 이어지는 칸이 비어 있다.
+  // '아래 줄에 값이 있는 빈칸' 일 때만 오른쪽으로 채운다.
+  const nCols = grid[0].length;
+  const rows = [];
+  for (let h = 0; h < nHeader; h++) {
+    const row = grid[h].slice(0, nCols);
+    if (h + 1 < nHeader) {
+      const below = grid[h + 1];
+      let last = null;
+      for (let c = 0; c < nCols; c++) {
+        if (row[c] !== null && row[c] !== "") last = row[c];
+        else if (last !== null && below[c] !== null && below[c] !== "") row[c] = last;
+        else last = null;
+      }
+    }
+    rows.push(row);
+  }
+  const labels = [];
+  for (let c = 0; c < nCols; c++) {
+    const parts = [];
+    for (let h = 0; h < nHeader; h++) {
+      const v = rows[h][c];
+      if (v !== null && v !== "") parts.push(String(v).trim());
+    }
+    labels.push(parts.join(" "));
+  }
+  return labels;
+}
+
+function matchFirst(res, text) {
+  for (const re of res) { const m = text.match(re); if (m) return parseInt(m[1], 10); }
+  return null;
+}
+
+function classifyMetric(label) {
+  for (const [metric, re] of METRIC_PATTERNS) if (re.test(label)) return metric;
+  return null;
+}
+
+function classifyColumns(grid, labels, tsCol, nHeader) {
+  const data = grid.slice(nHeader);
+  const cols = [];
+  for (let c = 0; c < labels.length; c++) {
+    const label = labels[c];
+    if (c === tsCol) { cols.push({ col: c, label, role: "timestamp" }); continue; }
+    const nums = [];
+    for (const r of data) { const v = asNum(r[c]); if (v !== null) nums.push(v); }
+    const distinct = new Set(nums).size;
+    const info = { col: c, label, nNum: nums.length, distinct,
+      min: nums.length ? Math.min(...nums) : null, max: nums.length ? Math.max(...nums) : null };
+    const metric = classifyMetric(label);
+    if (!nums.length) info.role = "text";
+    else if (DERIVED_RE.test(label)) { info.role = "derived"; info.value = null; }
+    else if (META_RE.test(label) || (distinct <= 1 && !metric)) {
+      // 전 구간 0 인 전류는 '메타'가 아니라 '죽은 스트링' 이라는 진단 대상이다
+      info.role = "meta"; info.value = nums[0] ?? null;
+    } else {
+      info.role = "measure";
+      info.metric = metric;
+      info.channelNo = matchFirst(CHAN_RES, label);
+      info.inverterNo = matchFirst(INV_RES, label);
+    }
+    cols.push(info);
+  }
+  return cols;
+}
+
+function median(arr) {
+  const v = arr.filter(x => x !== null && !isNaN(x)).slice().sort((a, b) => a - b);
+  if (!v.length) return NaN;
+  const m = v.length >> 1;
+  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+}
+function quantile(arr, p) {
+  const v = arr.filter(x => x !== null && !isNaN(x)).slice().sort((a, b) => a - b);
+  if (!v.length) return NaN;
+  const i = (v.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+  return lo === hi ? v[lo] : v[lo] + (v[hi] - v[lo]) * (i - lo);
+}
+
+function inferInterval(times) {
+  const ts = times.slice().sort((a, b) => a - b);
+  const diffs = [];
+  for (let i = 0; i + 1 < ts.length; i++) {
+    const d = (ts[i + 1] - ts[i]) / 1000;
+    if (d > 0) diffs.push(d);
+  }
+  if (!diffs.length) return 3600;
+  const med = median(diffs);
+  return COMMON_INTERVALS.reduce((a, b) => Math.abs(b - med) < Math.abs(a - med) ? b : a);
+}
+
+/* 채널 묶기 + 허수 채널 판정
+   mirror : 전압 시계열이 앞선 채널과 동일 -> 장비 복제 출력
+   dead   : 전류가 전 구간 0 -> 단선·차단 (제외하되 반드시 보고)
+   phantom: 전압이 정상 범위 절반 미만 고정 -> 미사용 슬롯          */
+function buildUnits(grid, cols, nHeader) {
+  const data = grid.slice(nHeader);
+  const groups = new Map();
+  for (const ci of cols) {
+    if (ci.role !== "measure") continue;
+    const key = ci.channelNo ?? null;
+    if (!groups.has(key)) groups.set(key, { channelNo: key, metrics: {} });
+    const g = groups.get(key);
+    let m = ci.metric || "unknown";
+    if (m in g.metrics) { let k = 2; while ((m + "_" + k) in g.metrics) k++; m = m + "_" + k; }
+    g.metrics[m] = ci.col;
+  }
+  const series = c => data.map(r => asNum(r[c])).join("|");
+
+  const keys = [...groups.keys()].sort((a, b) => (a === null) - (b === null) || a - b);
+  const units = [], notes = [], seenV = new Map();
+  for (const key of keys) {
+    const g = groups.get(key);
+    const name = key === null ? "UNIT" : "CH" + String(key).padStart(2, "0");
+    const u = { unitId: name, channelNo: key, metrics: g.metrics, status: "active", reason: "" };
+    const vCol = g.metrics.voltage_v, aCol = g.metrics.current_a;
+    if (vCol !== undefined) {
+      const h = series(vCol);
+      if (seenV.has(h)) { u.status = "mirror"; u.reason = `전압 시계열이 ${seenV.get(h)} 와 동일 (장비 복제 출력)`; }
+      else seenV.set(h, name);
+    }
+    if (u.status === "active" && aCol !== undefined) {
+      const vals = data.map(r => asNum(r[aCol])).filter(v => v !== null);
+      if (vals.length && Math.max(...vals) <= 0.05) {
+        u.status = "dead";
+        u.reason = `전 구간 전류 0 (최대 ${Math.max(...vals).toFixed(2)}A) - 단선·차단 의심`;
+      }
+    }
+    units.push(u);
+  }
+  const vMax = [];
+  for (const u of units) {
+    const vc = u.metrics.voltage_v;
+    if (vc !== undefined && u.status === "active") {
+      const vals = data.map(r => asNum(r[vc])).filter(v => v !== null);
+      if (vals.length) vMax.push(Math.max(...vals));
+    }
+  }
+  if (vMax.length) {
+    const ref = median(vMax);
+    for (const u of units) {
+      const vc = u.metrics.voltage_v;
+      if (vc === undefined || !["active", "dead"].includes(u.status)) continue;
+      const vals = data.map(r => asNum(r[vc])).filter(v => v !== null);
+      if (vals.length && Math.max(...vals) < ref * 0.5) {
+        if (u.status === "active") u.status = "phantom";
+        u.reason = (u.reason ? u.reason + " / " : "") +
+          `전압 최대 ${Math.max(...vals).toFixed(0)}V (정상 채널 ${ref.toFixed(0)}V 의 절반 미만) - 미사용 슬롯 의심`;
+      }
+    }
+  }
+  for (const u of units) if (u.status !== "active") notes.push(`${u.unitId}: ${u.status} (${u.reason})`);
+  return { units, notes };
+}
+
+function inferProfile(grid) {
+  const tsCol = findTimeColumn(grid);
+  const nHeader = findHeaderRows(grid, tsCol);
+  if (nHeader === 0) throw new Error("헤더 행을 찾을 수 없습니다 (첫 행부터 데이터).");
+  const labels = buildLabels(grid, nHeader);
+  const cols = classifyColumns(grid, labels, tsCol, nHeader);
+  const { units, notes } = buildUnits(grid, cols, nHeader);
+  const times = grid.slice(nHeader).map(r => parseTs(r[tsCol])).filter(Boolean);
+  if (!times.length) throw new Error("유효한 시각이 없습니다.");
+  return { tsCol, nHeader, labels, cols, units, notes, intervalSec: inferInterval(times) };
+}
+
+/* ── 3) 표준 데이터셋 ───────────────────────────────────────────────
+   이 단계를 지나면 원본 포맷의 차이는 사라진다. 결측 슬롯을 NaN 으로
+   남기는 등간격 격자를 만들어 통신 단절 구간이 드러나게 한다. */
+
+function buildDataset(grid, prof) {
+  const { nHeader, tsCol, intervalSec: iv } = prof;
+  const rows = [];
+  for (const r of grid.slice(nHeader)) {
+    const t = parseTs(r[tsCol]);
+    if (t) rows.push([t.getTime(), r]);
+  }
+  rows.sort((a, b) => a[0] - b[0]);               // 내림차순 원본도 여기서 정렬된다
+  const dedup = new Map();
+  for (const [t, r] of rows) if (!dedup.has(t)) dedup.set(t, r);
+
+  const step = iv * 1000;
+  const keys = [...dedup.keys()];
+  const t0 = Math.floor(Math.min(...keys) / step) * step;
+  const t1 = Math.max(...keys);
+  const times = [];
+  for (let t = t0; t <= t1; t += step) times.push(t);
+  const slot = new Map(times.map((t, i) => [t, i]));
+
+  const units = prof.units.map(u => ({ ...u }));
+  const metricNames = [...new Set(units.flatMap(u => Object.keys(u.metrics)))].sort();
+  const series = {};
+  for (const m of metricNames) series[m] = new Float64Array(times.length * units.length).fill(NaN);
+
+  for (const [t, r] of dedup) {
+    const i = slot.get(Math.floor(t / step) * step);
+    if (i === undefined) continue;
+    units.forEach((u, j) => {
+      for (const [m, c] of Object.entries(u.metrics)) {
+        const v = c < r.length ? asNum(r[c]) : null;
+        if (v !== null) series[m][i * units.length + j] = v;
+      }
+    });
+  }
+  const nU = units.length;
+  return {
+    times, units, series, intervalSec: iv, nU,
+    at: (m, i, j) => series[m][i * nU + j],
+    primaryMetric() {
+      for (const m of ["energy_kwh", "power_kw", "current_a"]) if (m in series) return m;
+      return metricNames[0];
+    },
+    activeIndex() { return units.map((u, i) => [u, i]).filter(([u]) => u.status === "active").map(([, i]) => i); },
+  };
+}
+
+/* ── 4) 품질검증 · 주간판정 · 구성 세그먼트 ──────────────────────────
+   여기서 거르는 것이 결과의 신뢰도를 정한다. 특히 두 가지가 실제로
+   오진을 유발했던 항목이다.
+   1) 야간 결측은 고장이 아니다. 어떤 장비는 야간에 로그를 남기지 않는다.
+      -> 천문계산 없이 '사이트 전체 출력' 으로 주간을 정의한다.
+   2) 채널 구성이 바뀌면 기간을 나눠야 한다. 스트링이 물리적으로 다른
+      슬롯으로 이동하면, 한 덩어리로 비교할 때 무조건 고장으로 잡힌다. */
+
+const DAYLIGHT_FRACTION = 0.03, ACTIVE_DAY_FRACTION = 0.03, MIN_SEGMENT_DAYS = 3, STUCK_RUN = 12;
+const dayKey = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`; };
+const hourOf = t => new Date(t).getUTCHours();
+const monthKey = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`; };
+
+function runQc(ds, metric) {
+  metric = metric || ds.primaryMetric();
+  const nT = ds.times.length, nU = ds.nU, act = ds.activeIndex();
+  if (!act.length) throw new Error("분석 가능한 채널이 없습니다.");
+  const mat = ds.series[metric];
+  const valid = new Uint8Array(nT * nU);
+  const flags = {};
+  let miss = 0, neg = 0;
+  for (let k = 0; k < nT * nU; k++) {
+    if (isNaN(mat[k])) { miss++; continue; }
+    if (mat[k] < 0) { neg++; continue; }
+    valid[k] = 1;
+  }
+  flags["결측"] = miss; flags["음수"] = neg;
+
+  const actVals = [];
+  for (let i = 0; i < nT; i++) for (const j of act) if (!isNaN(mat[i * nU + j])) actVals.push(mat[i * nU + j]);
+  const rated = quantile(actVals, 0.995);
+  let over = 0;
+  for (let i = 0; i < nT; i++) for (let j = 0; j < nU; j++) {
+    const k = i * nU + j;
+    if (valid[k] && mat[k] > rated * 1.3) { valid[k] = 0; over++; }
+  }
+  flags["정격초과"] = over;
+
+  // 사이트 대표값 = 활성 채널 중앙값 (한 채널이 죽어도 흔들리지 않는다)
+  const siteRef = new Float64Array(nT).fill(NaN);
+  const daylight = new Uint8Array(nT);
+  const thr = rated * DAYLIGHT_FRACTION;
+  for (let i = 0; i < nT; i++) {
+    const row = [];
+    for (const j of act) if (valid[i * nU + j]) row.push(mat[i * nU + j]);
+    if (row.length) siteRef[i] = median(row);
+    if (siteRef[i] > thr) daylight[i] = 1;
+  }
+  flags["주간 시각수"] = daylight.reduce((a, b) => a + b, 0);
+  flags["야간·정지 시각수"] = nT - flags["주간 시각수"];
+
+  // 센서 고착 (주간에 같은 값이 계속 반복)
+  let stuck = 0;
+  for (let j = 0; j < nU; j++) {
+    let runStart = 0, runVal = null;
+    const close = (i) => {
+      if (runVal !== null && i - runStart >= STUCK_RUN)
+        for (let k = runStart; k < i; k++) { if (valid[k * nU + j]) { valid[k * nU + j] = 0; stuck++; } }
+    };
+    for (let i = 0; i < nT; i++) {
+      const v = daylight[i] ? mat[i * nU + j] : null;
+      if (v !== null && runVal !== null && v === runVal) continue;
+      close(i); runStart = i; runVal = v;
+    }
+    close(nT);
+  }
+  flags["센서고착"] = stuck;
+
+  // 날짜별 주간 인덱스
+  const days = new Map();
+  for (let i = 0; i < nT; i++) if (daylight[i]) {
+    const d = dayKey(ds.times[i]);
+    if (!days.has(d)) days.set(d, []);
+    days.get(d).push(i);
+  }
+
+  // 구성 세그먼트 (활성 채널 집합이 같은 연속 구간)
+  const dayList = [...days.keys()].sort();
+  const sets = [];
+  for (const d of dayList) {
+    const idx = days.get(d);
+    const tot = act.map(j => idx.reduce((s, i) => s + (valid[i * nU + j] ? mat[i * nU + j] : 0), 0));
+    const pos = tot.filter(v => v > 0);
+    if (!pos.length) { sets.push(sets.length ? sets[sets.length - 1] : act.join(",")); continue; }
+    const ref = median(pos);
+    sets.push(act.filter((j, k) => tot[k] > ref * ACTIVE_DAY_FRACTION).join(","));
+  }
+  const runs = [];
+  let start = 0;
+  for (let k = 1; k <= dayList.length; k++) {
+    if (k === dayList.length || sets[k] !== sets[start]) {
+      runs.push({ start: dayList[start], end: dayList[k - 1], nDays: k - start, active: sets[start] });
+      start = k;
+    }
+  }
+  const merged = [];
+  for (const r of runs) {
+    const last = merged[merged.length - 1];
+    if (last && (r.nDays < MIN_SEGMENT_DAYS || r.active === last.active)) {
+      last.end = r.end; last.nDays += r.nDays; continue;
+    }
+    merged.push({ ...r });
+  }
+  const segments = merged.map(r => ({
+    start: r.start, end: r.end, nDays: r.nDays,
+    activeUnits: r.active ? r.active.split(",").map(Number) : [],
+  }));
+
+  return { metric, valid, daylight, siteRef, rated, flags, segments, days, dayList };
+}
+
+/* ── 5) 지표 (PI · 손실 · 시간대 프로파일) ────────────────────────────
+   일사량 센서가 없는 사이트가 대부분이므로 절대 PR 대신
+   PI = 해당 채널 발전량 / 동일 사이트 활성 채널 중앙값 을 주 지표로 쓴다.
+   계절·날씨로 전 채널이 함께 오르내려도 중앙값으로 나누면 상쇄된다. */
+
+const MIN_VALID_FRACTION = 0.7, LOSS_DEADBAND = 0.03,
+      SHAPE_RECENT_DAYS = 30, MIN_HOUR_SAMPLES = 10, MIN_DAY_REF_FRACTION = 0.20;
+
+function energyConversion(ds, metric, stringVolt) {
+  const h = ds.intervalSec / 3600;
+  if (metric === "energy_kwh") return [1.0, "적산 발전량 그대로"];
+  if (metric === "power_kw") return [h, `kW × ${h.toFixed(3)}h`];
+  if (metric === "current_a") {
+    if (!stringVolt) return [null, "스트링 동작전압을 입력하면 kWh 로 환산합니다 (지금은 전류비까지만)"];
+    return [stringVolt / 1000 * h, `A × ${stringVolt.toFixed(0)}V × ${h.toFixed(3)}h (추정)`];
+  }
+  return [null, `지표 '${metric}' 는 kWh 환산 규칙이 없습니다`];
+}
+
+function computeMetrics(ds, qc, segment, stringVolt) {
+  const nU = ds.nU, mat = ds.series[qc.metric];
+  let dayList = qc.dayList.slice();
+  let cols = ds.activeIndex();
+  if (segment) {
+    dayList = dayList.filter(d => d >= segment.start && d <= segment.end);
+    cols = segment.activeUnits.slice();
+  }
+  if (!dayList.length || !cols.length) throw new Error("분석할 날짜 또는 채널이 없습니다.");
+
+  const [conv, convNote] = energyConversion(ds, qc.metric, stringVolt);
+  const nD = dayList.length, nC = cols.length;
+  const energy = dayList.map(() => new Array(nC).fill(NaN));
+  const avail = dayList.map(() => new Array(nC).fill(0));
+
+  dayList.forEach((d, di) => {
+    const idx = qc.days.get(d);
+    const slotRef = idx.map(i => {
+      const row = [];
+      for (const j of cols) if (qc.valid[i * nU + j]) row.push(mat[i * nU + j]);
+      return row.length ? median(row) : NaN;
+    });
+    cols.forEach((j, k) => {
+      let tot = 0, ok = 0, lost = 0;
+      idx.forEach((i, p) => {
+        if (qc.valid[i * nU + j]) { tot += mat[i * nU + j]; ok++; }
+        else if (!isNaN(slotRef[p])) lost += slotRef[p];
+      });
+      // 하루 중 유효 비율이 낮으면 적산에서 제외 (부분 데이터 비교는 왜곡)
+      energy[di][k] = (ok / idx.length) >= MIN_VALID_FRACTION ? tot : NaN;
+      avail[di][k] = lost;
+    });
+  });
+
+  const refDaily = energy.map(row => median(row));
+  let nDropped = 0;
+  const strong = quantile(refDaily, 0.90) * MIN_DAY_REF_FRACTION;
+  refDaily.forEach((v, di) => {
+    if (!(v >= strong)) { nDropped++; energy[di] = energy[di].map(() => NaN); refDaily[di] = NaN; }
+  });
+
+  const pi = energy.map((row, di) => row.map(v => v / refDaily[di]));
+  const loss = energy.map((row, di) => row.map(v => {
+    const deficit = refDaily[di] * (1 - LOSS_DEADBAND) - v;
+    return isNaN(deficit) ? 0 : Math.max(0, deficit);
+  }));
+
+  const recent = dayList.slice(-SHAPE_RECENT_DAYS);
+  const { hourlyRatio, hours, hourlyRef } = hourlyProfile(ds, qc, cols, recent);
+
+  const k = conv || 1.0;
+  const m = {
+    ds, qc, days: dayList, cols, unitIds: cols.map(j => ds.units[j].unitId),
+    energy, pi, refDaily,
+    lossKwh: loss.map(r => r.map(v => v * k)),
+    availLossKwh: avail.map(r => r.map(v => v * k)),
+    hourlyRatio, hours, hourlyRef, conv, convNote, mode: "peer",
+    shapeWindow: [recent[0], recent[recent.length - 1]], nDropped,
+    unit: conv ? "kWh" : "A·h",
+  };
+  const mo = monthly(m);
+  m.months = mo.months; m.monthlyPi = mo.pi; m.monthlyLoss = mo.loss;
+  return m;
+}
+
+function monthly(m) {
+  const idx = new Map();
+  m.days.forEach((d, di) => {
+    const key = d.slice(0, 7);
+    if (!idx.has(key)) idx.set(key, []);
+    idx.get(key).push(di);
+  });
+  const months = [...idx.keys()];
+  const pi = months.map(k => m.cols.map((_, j) =>
+    median(idx.get(k).map(di => m.pi[di][j]).filter(v => !isNaN(v)))));
+  const loss = months.map(k => m.cols.map((_, j) =>
+    idx.get(k).reduce((s, di) => s + m.lossKwh[di][j], 0)));
+  return { months, pi, loss };
+}
+
+/* 시간대별 (채널값 / 사이트 중앙값). 형태로 원인을 구분한다:
+   아침·저녁만 낮음 -> 음영 / 전 시간대 균등 -> 열화·오염 / 정오만 -> 과열·클리핑
+   평균이 아니라 중앙값을 쓴다 -- 저조도 시각의 비율은 분산이 커서
+   평균을 쓰면 정상 채널이 '정오 저하' 로 오진된다. */
+function hourlyProfile(ds, qc, cols, dayList) {
+  const nU = ds.nU, mat = ds.series[qc.metric], dayset = new Set(dayList);
+  const buckets = new Map(), levels = new Map();
+  for (let i = 0; i < ds.times.length; i++) {
+    if (!qc.daylight[i] || !dayset.has(dayKey(ds.times[i]))) continue;
+    const vals = cols.map(j => qc.valid[i * nU + j] ? mat[i * nU + j] : NaN);
+    if (vals.every(isNaN)) continue;
+    const ref = median(vals);
+    if (!(ref > 0)) continue;
+    const h = hourOf(ds.times[i]);
+    if (!buckets.has(h)) { buckets.set(h, []); levels.set(h, []); }
+    buckets.get(h).push(vals.map(v => v / ref));
+    levels.get(h).push(ref);
+  }
+  const hours = [...buckets.keys()].filter(h => buckets.get(h).length >= MIN_HOUR_SAMPLES).sort((a, b) => a - b);
+  const hourlyRatio = hours.map(h => cols.map((_, k) =>
+    median(buckets.get(h).map(r => r[k]).filter(v => !isNaN(v)))));
+  const hourlyRef = hours.map(h => levels.get(h).reduce((a, b) => a + b, 0) / levels.get(h).length);
+  return { hourlyRatio, hours, hourlyRef };
+}
+
+/* ── 6) 저하 탐지 ────────────────────────────────────────────────────
+   임계값은 실무 기준. robust z-score(중앙값·MAD)를 쓰는 이유는
+   평균·표준편차는 고장 채널 자신이 기준을 오염시켜 고장을 숨기기 때문. */
+
+const PI_WARN = 0.97, PI_LOW = 0.93, PI_CRIT = 0.85, Z_THRESHOLD = 3.5;
+const STEP_MIN_SIDE = 7, STEP_MIN_DROP = 0.03;
+const TREND_MIN_DAYS = 60, TREND_WARN_PCT_YEAR = 2.0, TREND_MAX_PCT_YEAR = 20.0, TREND_RECENT_DAYS = 30;
+const SEV_RANK = { good: 0, watch: 1, warning: 2, serious: 3, critical: 4 };
+const SEV_LABEL = { critical: "심각", serious: "저하", warning: "주의", watch: "관찰", good: "정상" };
+const SEV_ICON = { critical: "●", serious: "▲", warning: "◆", watch: "◇", good: "○" };
+const KIND_LABEL = { persistent: "지속 저하", step: "계단식 하락", trend: "점진 열화",
+  shape: "시간대 편중", seasonal: "특정 기간 집중", availability: "결측·정지" };
+
+const severityOf = pi => pi < PI_CRIT ? "critical" : pi < PI_LOW ? "serious" : pi < PI_WARN ? "warning" : "good";
+const worse = (a, b) => SEV_RANK[a] >= SEV_RANK[b] ? a : b;
+
+function robustZ(v) {
+  const ok = v.filter(x => !isNaN(x));
+  if (ok.length < 3) return v.map(() => NaN);
+  const med = median(ok), mad = median(ok.map(x => Math.abs(x - med)));
+  if (!(mad > 0)) return v.map(() => NaN);
+  return v.map(x => 0.6745 * (x - med) / mad);
+}
+
+/* 평균 차이가 가장 큰 분할점. CUSUM 대신 단순 최적분할을 쓰는 이유는
+   결과를 '날짜 하나' 로 보고해야 현장에서 점검 시점을 특정할 수 있어서다. */
+function changepoint(col) {
+  const ok = col.map(v => !isNaN(v));
+  if (ok.filter(Boolean).length < STEP_MIN_SIDE * 2 + 1) return null;
+  let best = null;
+  for (let k = STEP_MIN_SIDE; k < col.length - STEP_MIN_SIDE; k++) {
+    const a = col.slice(0, k).filter(v => !isNaN(v)), b = col.slice(k).filter(v => !isNaN(v));
+    if (a.length < STEP_MIN_SIDE || b.length < STEP_MIN_SIDE) continue;
+    const d = median(a) - median(b);
+    if (!best || d > best.d) best = { d, k, before: median(a), after: median(b) };
+  }
+  if (!best || best.d < STEP_MIN_DROP) return null;
+  const vals = col.filter(v => !isNaN(v));
+  const diffs = [];
+  for (let i = 0; i + 1 < vals.length; i++) diffs.push(Math.abs(vals[i + 1] - vals[i]));
+  const noise = diffs.length ? median(diffs) : 0;
+  if (best.d < Math.max(STEP_MIN_DROP, noise * 3)) return null;
+  return best;
+}
+
+function trendPctPerYear(col) {
+  const pts = col.map((v, i) => [i, v]).filter(([, v]) => !isNaN(v));
+  if (pts.length < TREND_MIN_DAYS) return null;
+  const n = pts.length;
+  const mx = pts.reduce((s, p) => s + p[0], 0) / n, my = pts.reduce((s, p) => s + p[1], 0) / n;
+  let num = 0, den = 0;
+  for (const [x, y] of pts) { num += (x - mx) * (y - my); den += (x - mx) ** 2; }
+  if (!den) return null;
+  const base = median(pts.map(p => p[1]));
+  if (base <= 0) return null;
+  return (num / den) * 365 / base * 100;
+}
+
+function classifyShape(m, j) {
+  const prof = m.hourlyRatio.map(r => r[j]);
+  const ok = prof.map(v => !isNaN(v));
+  if (ok.filter(Boolean).length < 5) return ["normal", ""];
+  const p = prof.filter(v => !isNaN(v));
+  const n = p.length, edge = Math.max(1, n >> 2);
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const morning = avg(p.slice(0, edge)), evening = avg(p.slice(-edge));
+  const core = p.slice(edge, n - edge);
+  const noon = core.length ? avg(core) : avg(p);
+  if (noon >= 0.97 && Math.min(morning, evening) < 0.90) {
+    const side = morning < evening ? "아침" : "저녁";
+    return ["shading", `${side} 시간대만 저하 (${side} ${(Math.min(morning, evening) * 100).toFixed(0)}% / 정오 ${(noon * 100).toFixed(0)}%) - 음영(수목·구조물) 의심`];
+  }
+  if (noon < 0.95 && morning >= 0.98 && evening >= 0.98)
+    return ["clipping", `정오 구간만 저하 (정오 ${(noon * 100).toFixed(0)}%) - 과열 derating 또는 클리핑 의심`];
+  if (Math.max(...p) - Math.min(...p) < 0.05 && avg(p) < 0.95)
+    return ["uniform", `전 시간대 균등 저하 (${(avg(p) * 100).toFixed(0)}%) - 모듈 열화·오염·접속 저항 의심`];
+  return ["normal", ""];
+}
+
+/* 월별 PI 가 임계 미만인 달. 기간 전체 중앙값만 보면 '특정 계절에만
+   나빠지는 채널' 을 놓친다 (연중 PI 0.99 인데 1월에만 0.55 인 실제 사례). */
+function badMonths(m, j) {
+  const med = median(m.pi.map(r => r[j]).filter(v => !isNaN(v)));
+  if (isNaN(med) || med < PI_WARN) return [];      // 상시 저하는 persistent 가 보고함
+  const out = [];
+  m.months.forEach((key, mi) => {
+    const p = m.monthlyPi[mi][j];
+    if (!isNaN(p) && p < PI_LOW) out.push({ key, pi: p, loss: m.monthlyLoss[mi][j] });
+  });
+  out.sort((a, b) => b.loss - a.loss);
+  return out;
+}
+
+/* ── 7) 원인 진단 ────────────────────────────────────────────────────
+   "무엇이 언제부터 나빠졌는가" 다음에 현장이 실제로 필요한 것은
+   "그래서 무엇을 확인하러 가야 하는가" 이다.
+   직렬 스트링의 성질을 전제로 한다: 15매 직렬은 그중 가장 나쁜 모듈
+   1매에 스트링 전체가 끌려간다. 그래서 '하루 전체 균일 저하' 는
+   그림자보다 모듈·접속 결함을, '특정 시간대만' 은 그림자를 시사한다. */
+
+const WINTER_MONTHS = new Set([11, 12, 1, 2]);
+const PI_OK = 0.95, PI_BAD = 0.90, DROP_SIG = 0.05, CORR_SAME_AREA = 0.75;
+const PATTERN_LABEL = { winter_only: "동절기 한정", progressive: "진행성 악화",
+  recovering: "회복 완료", partial_recovery: "부분 회복", stable_low: "상시 저하", normal: "특이 패턴 없음" };
+
+function classifyPattern(m, j) {
+  const idx = m.months.map((k, i) => i).filter(i => !isNaN(m.monthlyPi[i][j]));
+  if (idx.length < 3) return ["normal", ""];
+  const vals = idx.map(i => m.monthlyPi[i][j]), keys = idx.map(i => m.months[i]);
+  const n = vals.length, cut = Math.max(1, Math.floor(n / 3));
+  const headMed = median(vals.slice(0, cut)), tailMed = median(vals.slice(-cut));
+  const bad = keys.map((k, i) => [k, vals[i]]).filter(([, v]) => v < PI_BAD);
+  const goodTail = tailMed >= PI_OK;
+
+  if (bad.length && goodTail && bad.every(([k]) => WINTER_MONTHS.has(+k.slice(5)))) {
+    const mons = bad.map(([k]) => +k.slice(5) + "월").join(", ");
+    return ["winter_only",
+      `동절기(${mons})에만 ${Math.min(...bad.map(b => b[1])).toFixed(2)} 수준으로 낮았다가 이후 ${tailMed.toFixed(2)} 로 회복. ` +
+      `태양고도가 낮은 계절에만 생기는 구조물·열간 그림자의 전형적 형태로, 매년 반복되는 정상 현상일 가능성이 높습니다.`];
+  }
+  if (tailMed < headMed - DROP_SIG && tailMed < PI_OK)
+    return ["progressive", `초기 ${headMed.toFixed(2)} 에서 최근 ${tailMed.toFixed(2)} 로 계속 나빠지고 있습니다(${((headMed - tailMed) * 100).toFixed(0)}%p 하락). 계절이 진행될수록 악화되는 방향입니다.`];
+  if (tailMed > headMed + DROP_SIG && headMed < PI_OK) {
+    if (tailMed >= PI_OK) return ["recovering", `초기 ${headMed.toFixed(2)} 에서 최근 ${tailMed.toFixed(2)} 로 정상 수준까지 회복되었습니다.`];
+    return ["partial_recovery", `초기 ${headMed.toFixed(2)} 에서 ${tailMed.toFixed(2)} 로 올라왔으나 정상 수준(${PI_OK})에는 아직 못 미칩니다. 동절기 그림자는 해소되었으나 다른 잔존 원인이 남아 있을 수 있습니다.`];
+  }
+  if (Math.max(...vals) < PI_OK && (Math.max(...vals) - Math.min(...vals)) < 0.10)
+    return ["stable_low", `전 기간 ${Math.min(...vals).toFixed(2)}~${Math.max(...vals).toFixed(2)} 로 고르게 낮습니다. 계절과 무관한 상시 저하입니다.`];
+  return ["normal", ""];
+}
+
+/* 저하가 몰린 시간대. 아침·저녁 끝단은 저조도라 비율이 원래 흔들리므로
+   채널 자신의 최고 시간대를 기준으로 '자기보다 얼마나 눌렸는가' 로 본다.
+   보고 여부는 시간대 폭이 아니라 '하루 발전량 중 몇 %를 잃는가' 로 정한다
+   (17~18시의 10% 저하와 정오의 10% 저하는 손실 크기가 자릿수로 다르다). */
+const SHADE_DROP = 0.10, SHADE_MIN_HOURS = 2, SHADE_MIN_SHARE = 0.02;
+
+function shadingWindow(m, j) {
+  const prof = m.hourlyRatio.map(r => r[j]);
+  const ok = prof.map(v => !isNaN(v));
+  if (ok.filter(Boolean).length < 5) return [];
+  const base = quantile(prof.filter(v => !isNaN(v)), 0.90);
+  if (!(base > 0)) return [];
+  const weak = prof.map((v, i) => (ok[i] && v < base - SHADE_DROP && v < PI_OK) ? i : -1).filter(i => i >= 0);
+  const windows = [];
+  let run = [];
+  for (const i of weak) {
+    if (run.length && i === run[run.length - 1] + 1) run.push(i);
+    else { if (run.length >= SHADE_MIN_HOURS) windows.push(run); run = [i]; }
+  }
+  if (run.length >= SHADE_MIN_HOURS) windows.push(run);
+  const ref = m.hourlyRef.length === m.hours.length ? m.hourlyRef : m.hours.map(() => 1);
+  const total = ref.reduce((a, b) => a + b, 0) || 1;
+  const out = [];
+  for (const w of windows) {
+    const share = w.reduce((s, i) => s + Math.max(0, base - prof[i]) * ref[i], 0) / total;
+    if (share < SHADE_MIN_SHARE) continue;
+    out.push({ from: m.hours[w[0]], to: m.hours[w[w.length - 1]], lo: Math.min(...w.map(i => prof[i])), base, share });
+  }
+  out.sort((a, b) => b.share - a.share);
+  return out;
+}
+const describeWindows = ws => ws.map(w =>
+  `${w.from}~${w.to}시(최저 ${(w.lo * 100).toFixed(0)}%, 일발전량의 ${(w.share * 100).toFixed(1)}% 손실)`).join(", ");
+
+function hypotheses(pattern, shape, piMedian, hasStep, windows) {
+  const H = [];
+  const wtxt = describeWindows(windows || []);
+  if (wtxt) H.push(["특정 시간대 그림자 (" + wtxt + ")",
+    "하루 중 그 시간대에만 눌리고 나머지 시간에는 정상 수준으로 발전함",
+    "해당 시각에 현장에서 그림자 원인(인접 열·구조물·수목·전주) 직접 확인. 그림자면 시간대가 계절에 따라 이동함"]);
+
+  if (pattern === "winter_only") {
+    H.push(["동절기 구조물·열간 그림자 (결함 아닐 가능성 높음)",
+      "태양고도가 낮은 겨울에만 저하되고 봄부터 스스로 회복됨",
+      "겨울철 오전·오후에 해당 어레이 하단에 그림자가 지는지 현장 확인. 설계상 예견된 것이면 조치 불필요"]);
+    H.push(["적설 잔존", "동절기 한정 저하는 눈이 남아 있는 구간에서도 동일하게 나타남", "강설 이력과 저하 일자를 대조"]);
+    return H;
+  }
+
+  // 계단식 가설은 '진행성 악화' 가 아닐 때만 앞에 세운다. 순서를 뒤집으면
+  // 계절 진행형 원인(식생 등)이 뒤로 밀려 현장에서 엉뚱한 곳을 먼저 본다.
+  let stepH = [];
+  if (hasStep) {
+    stepH = [
+      ["스트링 퓨즈 단선 또는 바이패스 다이오드 고장",
+       "특정 날짜를 경계로 계단식으로 떨어짐 (점진 열화와 구분됨)",
+       "접속반 퓨즈 도통 시험, 모듈 바이패스 다이오드 점검"],
+      ["모듈 파손·커넥터 탈락",
+       "급락 시점이 특정되므로 물리적 사건일 가능성",
+       "급락 일자 전후의 기상(강풍·우박)·작업 이력 확인, 육안 점검"],
+    ];
+    if (pattern !== "progressive") { H.push(...stepH); stepH = []; }
+  }
+
+  if (pattern === "partial_recovery") {
+    H.push(["동절기 그림자 + 잔존 원인의 중첩", "겨울 저하는 봄에 해소되었으나 현재도 정상 수준에 못 미침",
+      "겨울 그림자는 정상으로 보고, 남은 손실분에 대해 육안 점검과 IV커브 측정으로 모듈·접속 상태 확인"]);
+    H.push(["모듈 오염 또는 경미한 열화", "계절 요인이 사라진 뒤에도 남는 일정한 손실", "세척 전후 비교, 인접 정상 스트링과 출력 대조"]);
+  }
+  if (pattern === "progressive") {
+    if (shape === "uniform" || shape === "normal") {
+      H.push(["식생(잡초) 성장에 의한 하단 셰이딩", "겨울에는 정상이었다가 생장기에 맞춰 악화되는 시점 패턴이 부합",
+        "어레이 하단 잡초 높이 확인, 예초 후 재측정으로 회복 여부 판정"]);
+      H.push(["스트링 내 모듈 결함 (셀 균열 / PID / 바이패스 다이오드)",
+        "직렬 스트링은 가장 나쁜 모듈 1매에 전체가 끌려감. 하루 전체에 걸친 균일한 저하는 그림자보다 모듈 결함에 가까움",
+        "IV커브 테스터로 개방전압·단락전류 측정, 열화상으로 핫스팟 확인"]);
+      H.push(["커넥터(MC4)·퓨즈 접촉 불량에 의한 저항 증가", "접촉 저항은 온도가 오르는 여름에 더 뚜렷해짐",
+        "접속반 단자 열화상 촬영, 체결 토크 점검"]);
+    } else {
+      H.push(["인접 수목·구조물 그림자의 계절적 확대", "특정 시간대에 집중된 저하가 계절이 갈수록 심해짐",
+        "해당 시간대에 현장에서 그림자 위치 직접 확인"]);
+    }
+  } else if (pattern === "stable_low") {
+    H.push(["모듈 열화 또는 스트링 구성 차이", "계절과 무관하게 일정 비율로 낮음", "모듈 명판·설치 매수 확인, IV커브로 출력 비교"]);
+    H.push(["접속 저항 증가 (커넥터·단자)", "일정한 손실은 직렬 저항 성분의 특징", "접속반 단자 열화상, 체결 토크 점검"]);
+  }
+
+  if (shape === "shading") H.push(["고정 그림자 (구조물·수목)", "아침 또는 저녁 시간대에만 집중적으로 낮음", "해당 시간대 현장 그림자 확인"]);
+  else if (shape === "clipping") H.push(["과열 derating 또는 인버터 클리핑", "정오 고온 구간에서만 출력이 눌림", "인버터 온도 로그 확인, 통풍·방열 상태 점검"]);
+  else if (shape === "uniform" && !H.length) H.push(["모듈 오염 또는 전반적 열화", "하루 전체에 걸쳐 고르게 낮음", "표면 오염도 확인 후 세척 전후 비교"]);
+
+  H.push(...stepH);
+  if (piMedian < 0.30) H.unshift(["스트링 사실상 미발전 (단선·차단 의심)",
+    "정상 채널의 30% 미만으로 전류가 거의 흐르지 않음",
+    "접속반에서 해당 스트링 개방전압 측정 - 전압이 정상이면 차단·퓨즈, 전압도 낮으면 모듈·배선 문제"]);
+  if (!H.length) H.push(["특정 원인 추정 어려움", "뚜렷한 형태 신호가 없음", "다음 달 데이터로 재확인"]);
+  return H;
+}
+
+/* 문제 채널끼리 같이 움직이면 개별 부품 고장보다 그 구역 공통 원인
+   (식생·구조물 그림자·접속반)일 가능성이 크다. */
+function coDegradation(m, flagged) {
+  const pairs = [];
+  for (let a = 0; a < flagged.length; a++) for (let b = a + 1; b < flagged.length; b++) {
+    const ja = flagged[a], jb = flagged[b];
+    const xs = [], ys = [];
+    m.pi.forEach(row => { if (!isNaN(row[ja]) && !isNaN(row[jb])) { xs.push(row[ja]); ys.push(row[jb]); } });
+    if (xs.length < 20) continue;
+    const mx = xs.reduce((s, v) => s + v, 0) / xs.length, my = ys.reduce((s, v) => s + v, 0) / ys.length;
+    let num = 0, dx = 0, dy = 0;
+    for (let i = 0; i < xs.length; i++) { num += (xs[i] - mx) * (ys[i] - my); dx += (xs[i] - mx) ** 2; dy += (ys[i] - my) ** 2; }
+    if (dx < 1e-12 || dy < 1e-12) continue;
+    const r = num / Math.sqrt(dx * dy);
+    if (r >= CORR_SAME_AREA) pairs.push([m.unitIds[ja], m.unitIds[jb], r]);
+  }
+  pairs.sort((a, b) => b[2] - a[2]);
+  return pairs;
+}
+
+function analyzeDetect(m) {
+  const events = [], summaries = [];
+  const nC = m.cols.length;
+  const medPi = [], zs = [];
+  for (let j = 0; j < nC; j++) medPi.push(median(m.pi.map(r => r[j]).filter(v => !isNaN(v))));
+  robustZ(medPi).forEach(z => zs.push(z));
+
+  for (let j = 0; j < nC; j++) {
+    const uid = m.unitIds[j];
+    const col = m.pi.map(r => r[j]);
+    const s = {
+      unitId: uid, piMedian: medPi[j], z: zs[j],
+      lossKwh: m.lossKwh.reduce((a, r) => a + r[j], 0),
+      availLossKwh: m.availLossKwh.reduce((a, r) => a + r[j], 0),
+      severity: "good", diagnosis: [], step: null, trendPctYear: null, badMonths: [], piMinDay: null,
+    };
+    const [pat, patText] = classifyPattern(m, j);
+    s.pattern = pat; s.patternText = patText;
+    s.windows = shadingWindow(m, j);
+    const okIdx = col.map((v, i) => [v, i]).filter(([v]) => !isNaN(v));
+    if (okIdx.length) {
+      const mn = okIdx.reduce((a, b) => b[0] < a[0] ? b : a);
+      s.piMinDay = [m.days[mn[1]], mn[0]];
+    }
+
+    // 1) 지속 저하
+    let sev = isNaN(s.piMedian) ? "good" : severityOf(s.piMedian);
+    if (sev !== "good") {
+      s.severity = sev;
+      s.diagnosis.push(`peer 대비 지속 저하 (PI 중앙값 ${s.piMedian.toFixed(3)})`);
+      events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "persistent",
+        severity: sev, lossKwh: s.lossKwh, note: `기간 내내 다른 채널 중앙값의 ${(s.piMedian * 100).toFixed(1)}% 수준` });
+    } else if (!isNaN(s.z) && s.z <= -Z_THRESHOLD) {
+      s.severity = "warning";
+      s.diagnosis.push(`동종 채널 대비 통계적 이상 (z=${s.z.toFixed(1)})`);
+      events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "persistent",
+        severity: "warning", lossKwh: s.lossKwh, note: `PI ${s.piMedian.toFixed(3)}, robust z-score ${s.z.toFixed(1)}` });
+    }
+
+    // 2) 계단식 하락
+    const step = changepoint(col);
+    if (step) {
+      s.step = [m.days[step.k], step.before, step.after];
+      const sev2r = severityOf(step.before ? step.after / step.before : 1.0);
+      const sev2 = sev2r !== "good" ? sev2r : "warning";
+      s.diagnosis.push(`${m.days[step.k]} 부터 계단식 하락 (PI ${step.before.toFixed(3)} → ${step.after.toFixed(3)})`);
+      s.severity = worse(s.severity, sev2);
+      events.push({ unitId: uid, start: m.days[step.k], end: m.days[m.days.length - 1], kind: "step", severity: sev2,
+        lossKwh: m.lossKwh.slice(step.k).reduce((a, r) => a + r[j], 0),
+        note: `PI가 ${step.before.toFixed(3)} 에서 ${step.after.toFixed(3)} 로 ${(step.d * 100).toFixed(1)}%p 급락 - 퓨즈·다이오드·모듈 고장 점검` });
+    }
+
+    // 3) 점진 열화 — 계단식이 이미 잡힌 채널은 보고하지 않는다
+    //    (급락을 직선으로 근사하면 '연 -232% 열화' 같은 무의미한 수치가 나온다)
+    if (m.days.length >= TREND_MIN_DAYS && !s.step) {
+      const slope = trendPctPerYear(col);
+      if (slope !== null && slope >= -TREND_MAX_PCT_YEAR) {
+        s.trendPctYear = slope;
+        const recent = median(col.slice(-TREND_RECENT_DAYS).filter(v => !isNaN(v)));
+        if (slope <= -TREND_WARN_PCT_YEAR && !isNaN(recent) && recent < PI_WARN) {
+          s.diagnosis.push(`점진 하락 추세 ${slope.toFixed(1)}%/년`);
+          if (s.severity === "good") s.severity = "warning";
+          events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "trend",
+            severity: "warning", lossKwh: s.lossKwh, note: `PI가 연 ${slope.toFixed(1)}% 속도로 하락 - PID·열화·오염 누적 의심` });
+        }
+      }
+    }
+
+    // 3b) 계절·기간 집중 저하
+    const bad = badMonths(m, j);
+    if (bad.length) {
+      s.badMonths = bad;
+      const worstPi = Math.min(...bad.map(b => b.pi));
+      const txt = bad.slice(0, 4).map(b => `${b.key} PI ${b.pi.toFixed(2)}`).join(", ");
+      let sev3, note;
+      if (pat === "winter_only") {
+        sev3 = "watch";   // 겨울에만 낮았다가 스스로 회복 -> 조치 대상이 아니다
+        note = `동절기에만 저하 후 회복 (연중 PI ${s.piMedian.toFixed(3)}). ${txt}. 태양고도가 낮은 계절의 구조물·열간 그림자로 보이며 매년 반복되는 정상 현상일 가능성이 높습니다 - 결함 근거 약함`;
+        s.diagnosis.push(`동절기 한정 저하 (${txt}) - 결함 아닐 가능성`);
+      } else {
+        // 계절성은 'critical' 로 올리지 않는다. 연중 정상인 채널을 상시 고장
+        // 채널과 같은 등급으로 표시하면 조치 우선순위가 뒤집힌다.
+        sev3 = worstPi < 0.70 ? "serious" : "warning";
+        note = `연중 PI ${s.piMedian.toFixed(3)} 로 정상이지만 ${txt} — 계절성 음영 또는 적설 의심`;
+        s.diagnosis.push(`특정 기간 집중 저하 (${txt})`);
+      }
+      s.severity = worse(s.severity, sev3);
+      events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "seasonal",
+        severity: sev3, lossKwh: bad.reduce((a, b) => a + b.loss, 0), note });
+    }
+
+    // 4) 시간대 형태
+    const [shape, shapeTxt] = classifyShape(m, j);
+    s.shape = shape;
+    if (shape !== "normal") {
+      s.diagnosis.push(shapeTxt);
+      s.severity = worse(s.severity, "warning");
+      events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "shape",
+        severity: "warning", lossKwh: s.lossKwh, note: shapeTxt });
+    }
+
+    // 5) 가동률 손실
+    if (s.availLossKwh > 0) {
+      const tot = s.lossKwh + s.availLossKwh;
+      if (tot > 0 && s.availLossKwh / tot > 0.3) {
+        s.diagnosis.push(`결측·정지 구간 손실 ${s.availLossKwh.toFixed(0)} ${m.unit}`);
+        events.push({ unitId: uid, start: m.days[0], end: m.days[m.days.length - 1], kind: "availability",
+          severity: "warning", lossKwh: s.availLossKwh, note: "주간 결측·무효 데이터 구간 - 트립 또는 통신 단절 확인" });
+      }
+    }
+
+    // 6) 진행성 악화는 등급을 올린다 (지금 임계 안이어도 다음 달엔 더 나빠진다)
+    if (s.pattern === "progressive" && s.severity === "good") {
+      s.severity = "warning"; s.diagnosis.push("진행성 악화 추세");
+    }
+    if (s.windows.length) {
+      s.diagnosis.push("시간대 집중: " + describeWindows(s.windows));
+      s.severity = worse(s.severity, "warning");
+    }
+    s.hypotheses = s.severity !== "good"
+      ? hypotheses(s.pattern, s.shape, s.piMedian, !!s.step, s.windows) : [];
+    if (!s.diagnosis.length) s.diagnosis.push("이상 없음");
+    summaries.push(s);
+  }
+
+  const flagged = summaries.filter(s => s.severity !== "good").map(s => m.unitIds.indexOf(s.unitId));
+  const coPairs = flagged.length >= 2 ? coDegradation(m, flagged) : [];
+  events.sort((a, b) => b.lossKwh - a.lossKwh || a.unitId.localeCompare(b.unitId));
+  summaries.sort((a, b) => SEV_RANK[b.severity] - SEV_RANK[a.severity] || b.lossKwh - a.lossKwh || a.unitId.localeCompare(b.unitId));
+  return { events, summaries, coPairs };
+}
+
+/* ── 8) 리포트 렌더 ──────────────────────────────────────────────────
+   시각화 규칙 (dataviz 레퍼런스 팔레트 그대로)
+   · PI 히트맵은 '부족분 크기' = 크기(magnitude) 이므로 단일 색상 순차 램프.
+     무지개·신호등 색을 쓰지 않는다. 정상은 중립 회색.
+   · 라인차트는 문제 채널 3개만 강조색을 쓰고 나머지는 회색으로 눌러
+     이야기가 하나로 읽히게 한다.
+   · 색만으로 정보를 전달하지 않는다: 아이콘+라벨, 끝점 직접 라벨,
+     그리고 모든 수치를 표로도 제공한다. */
+
+const PI_BINS = [
+  [PI_WARN, "neutral", "정상 (97% 이상)"],
+  [PI_LOW, "h1", "주의 93~97%"],
+  [PI_CRIT, "h2", "저하 85~93%"],
+  [0.70, "h3", "심각 70~85%"],
+  [0.00, "h4", "70% 미만"],
+];
+const HIGHLIGHT = ["s1", "s2", "s3"];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = v => (v === null || v === undefined || isNaN(v)) ? "-"
+  : Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("ko-KR")
+  : Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1);
+const binSlot = pi => isNaN(pi) ? null : (PI_BINS.find(b => pi >= b[0]) || PI_BINS[PI_BINS.length - 1])[1];
+const sevChip = sev => `<span class="chip ${sev}"><i>${SEV_ICON[sev]}</i>${SEV_LABEL[sev]}</span>`;
+
+function renderReport(ds, qc, m, det, meta) {
+  const { events, summaries, coPairs } = det;
+  const totGen = m.energy.flat().reduce((a, v) => a + (isNaN(v) ? 0 : v), 0) * (m.conv || 1);
+  const totLoss = m.lossKwh.flat().reduce((a, v) => a + v, 0);
+  const totAvail = m.availLossKwh.flat().reduce((a, v) => a + v, 0);
+  const nBad = summaries.filter(s => s.severity !== "good").length;
+  const focus = summaries.filter(s => s.severity !== "good").slice(0, 3).map(s => s.unitId);
+
+  const parts = [];
+  parts.push(`<h2 style="margin-top:52px">분석 결과 · ${esc(meta.name)}</h2>
+<p class="note">${esc(meta.site)} · ${m.days[0]} ~ ${m.days[m.days.length - 1]} (${m.days.length}일)
+· 채널 ${m.unitIds.length}개 · 측정간격 ${prettyInterval(ds.intervalSec)}
+· 기준값은 <b>동일 인버터 내 정상 채널의 중앙값</b>이며, 일사량 센서 없이 날씨·계절 영향을 상쇄하도록 설계되었습니다.</p>`);
+
+  // 타일
+  const tiles = [
+    ["분석 기간", String(m.days.length), "일"],
+    ["이상 채널", String(nBad), `/ ${m.unitIds.length}개`],
+    ["추정 손실", fmt(totLoss), m.unit],
+    ["손실률", totGen ? (totLoss / totGen * 100).toFixed(1) : "0.0", "%"],
+  ];
+  if (totAvail > 0) tiles.push(["결측·정지 손실", fmt(totAvail), m.unit]);
+  parts.push(`<div class="tiles">${tiles.map(([a, b, c]) =>
+    `<div class="tile"><div class="lab">${a}</div><div class="val">${b}<span class="unit">${c}</span></div></div>`).join("")}</div>`);
+
+  // 채널별 진단
+  parts.push(`<h2>채널별 진단 (심각도·손실 순)</h2>
+<p class="note">PI = 해당 채널 일 발전량 ÷ 정상 채널 중앙값. 1.00이 동종 평균 수준입니다.
+<b>계절 패턴</b>은 저하의 방향을 나타내며, <b>동절기 한정</b>은 태양고도가 낮은 계절에만
+나타났다가 스스로 회복되는 것으로 결함이 아닐 가능성이 높습니다.</p>
+<div class="card"><div class="scroll"><table>
+<thead><tr><th class="lc">채널</th><th class="lc">판정</th><th class="lc">계절 패턴</th>
+<th>PI 중앙값</th><th>추정 손실 ${m.unit}</th><th>결측 손실 ${m.unit}</th><th class="l">진단</th></tr></thead>
+<tbody>${summaries.map(s => `<tr${["critical", "serious"].includes(s.severity) ? ' class="bad"' : ""}>
+<td class="lc"><b>${esc(s.unitId)}</b></td><td class="lc">${sevChip(s.severity)}</td>
+<td class="lc">${esc(PATTERN_LABEL[s.pattern] || "-")}</td><td>${s.piMedian.toFixed(3)}</td>
+<td>${fmt(s.lossKwh)}</td><td>${s.availLossKwh ? fmt(s.availLossKwh) : "-"}</td>
+<td class="l">${esc(s.diagnosis.join(" · "))}</td></tr>`).join("")}</tbody></table></div></div>`);
+
+  // 원인 가설
+  const cards = summaries.filter(s => s.severity !== "good" && s.hypotheses.length).map(s => `
+<div class="cause"><div class="chead">${sevChip(s.severity)} <b>${esc(s.unitId)}</b>
+<span class="pat">${esc(PATTERN_LABEL[s.pattern] || "-")}</span></div>
+${s.patternText ? `<p class="note" style="margin:8px 0 4px;color:var(--ink2)">${esc(s.patternText)}</p>` : ""}
+<ol class="hyp">${s.hypotheses.map(([t, why, how]) =>
+  `<li><b>${esc(t)}</b><div class="why">근거 · ${esc(why)}</div><div class="how">확인 · ${esc(how)}</div></li>`).join("")}</ol></div>`).join("");
+  if (cards) {
+    const co = coPairs.length ? `<h3>동반 저하 채널</h3>
+<p class="note">아래 채널들은 <b>같은 시기에 같은 모양으로</b> 나빠졌습니다. 개별 부품 고장보다
+그 구역 공통 원인(식생·구조물 그림자·접속반)일 가능성이 높으므로 함께 점검하십시오.</p>
+<div class="scroll"><table><thead><tr><th class="l">채널 쌍</th><th>일별 PI 상관</th></tr></thead>
+<tbody>${coPairs.slice(0, 8).map(([a, b, r]) =>
+  `<tr><td class="l">${esc(a)} ↔ ${esc(b)}</td><td>${r.toFixed(2)}</td></tr>`).join("")}</tbody></table></div>` : "";
+    parts.push(`<h2>원인 추정과 현장 확인 방법</h2>
+<p class="note">가능성이 높은 순서입니다. 직렬 스트링은 가장 성능이 낮은 모듈 1매에 스트링 전체가
+끌려가므로, <b>하루 종일 고른 저하</b>는 모듈·접속 결함을, <b>특정 시간대만의 저하</b>는 그림자를 시사합니다.</p>
+<div class="card">${cards}${co}
+<div class="caution"><b>현장 출동 전 확인</b> — 이 리포트의 채널번호는 <b>스트링 감시장치의 물리 포트
+번호</b>입니다. 전기도면의 스트링 표기(예: INV1-1~1-12)와의 1:1 대응은 도면에 명시되지 않은 경우가
+많으므로, <b>접속반 결선도 또는 현장에서 채널-스트링 위치를 먼저 특정</b>한 뒤 점검하십시오.
+매핑을 확인하지 않으면 엉뚱한 스트링을 점검하게 됩니다.</div></div>`);
+  }
+
+  parts.push(heatmapSvg(m));
+  parts.push(piLinesSvg(m, focus));
+  parts.push(hourProfileSvg(m, focus));
+  parts.push(eventTable(m, events));
+  parts.push(monthlyTable(m));
+  parts.push(appendix(ds, qc, m));
+  return parts.join("\n");
+}
+
+const prettyInterval = s => !s ? "?" : (s % 3600 === 0 ? `${s / 3600}시간` : `${Math.round(s / 60)}분`);
+
+function heatmapSvg(m) {
+  const nD = m.days.length, nU = m.unitIds.length;
+  const cw = Math.max(3, Math.min(9, Math.floor(980 / Math.max(nD, 1))));
+  const ch = 20, labW = 54, top = 26;
+  const W = labW + nD * cw + 8, H = top + nU * ch + 34;
+  const ticks = [], cells = [];
+  let prevMonth = null;
+  m.days.forEach((d, di) => {
+    const mk = d.slice(0, 7);
+    if (mk !== prevMonth) {
+      const x = labW + di * cw;
+      ticks.push(`<line x1="${x}" y1="${top - 6}" x2="${x}" y2="${top + nU * ch}" stroke="var(--axis)"/>`);
+      ticks.push(`<text x="${x + 3}" y="${top - 10}" fill="var(--muted)" font-size="10">${+mk.slice(5)}월</text>`);
+      prevMonth = mk;
+    }
+  });
+  m.unitIds.forEach((uid, j) => {
+    const y = top + j * ch;
+    cells.push(`<text x="${labW - 8}" y="${y + ch / 2}" fill="var(--ink2)" font-size="11" text-anchor="end" dominant-baseline="middle">${esc(uid)}</text>`);
+    for (let di = 0; di < nD; di++) {
+      const pi = m.pi[di][j], slot = binSlot(pi), x = labW + di * cw;
+      if (!slot) { cells.push(`<rect x="${x}" y="${y + 1}" width="${cw - 1}" height="${ch - 2}" fill="none" stroke="var(--grid)" stroke-width=".5"/>`); continue; }
+      cells.push(`<rect class="hc" x="${x}" y="${y + 1}" width="${cw - 1}" height="${ch - 2}" fill="var(--${slot})" data-u="${esc(uid)}" data-d="${m.days[di]}" data-v="${pi.toFixed(3)}" data-l="${fmt(m.lossKwh[di][j])}"/>`);
+    }
+  });
+  const legend = PI_BINS.map(([, slot, lab]) => `<span class="k"><i style="background:var(--${slot})"></i>${lab}</span>`).join("")
+    + `<span class="k"><i style="background:transparent;border:1px solid var(--grid)"></i>제외 (저일사·결측)</span>`;
+  return `<h2>채널 × 날짜 성능 히트맵</h2>
+<p class="note">한 장으로 <b>어느 채널이 언제부터</b> 나빠졌는지 봅니다. 색이 진할수록 부족분이 큽니다.
+일사량이 낮아 판정 신뢰도가 없는 날은 빈 칸으로 제외했습니다. 가로 스크롤로 전체 기간을 볼 수 있고,
+칸에 마우스를 올리면 값이 나옵니다.</p>
+<div class="card"><div class="legend">${legend}</div><div class="scroll">
+<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${ticks.join("")}${cells.join("")}</svg></div></div>`;
+}
+
+function endLabels(ends, yMin, yMax, gap = 13) {
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++)
+    if (ends[i].y - ends[i - 1].y < gap) ends[i].y = ends[i - 1].y + gap;
+  const over = ends.length ? ends[ends.length - 1].y - yMax : 0;
+  if (over > 0) ends.forEach(e => e.y -= over);
+  ends.forEach(e => e.y = Math.max(yMin, e.y));
+  return ends;
+}
+
+function piLinesSvg(m, focus) {
+  const W = 1080, H = 300, L = 44, R = 108, T = 16, B = 30;
+  const pw = W - L - R, ph = H - T - B;
+  const vals = m.pi.flat().filter(v => !isNaN(v));
+  if (!vals.length) return "";
+  const y0 = Math.max(0, Math.min(0.8, quantile(vals, 0.01) - 0.05)), y1 = Math.max(1.05, quantile(vals, 0.99) + 0.03);
+  const X = i => L + (m.days.length < 2 ? pw / 2 : i / (m.days.length - 1) * pw);
+  const Y = v => T + ph - (v - y0) / (y1 - y0) * ph;
+  const g = [];
+  for (const gv of [PI_CRIT, PI_LOW, PI_WARN, 1.0]) {
+    if (gv < y0 || gv > y1) continue;
+    const dash = (gv === PI_WARN || gv === PI_LOW) ? ' stroke-dasharray="4 3"' : "";
+    g.push(`<line x1="${L}" y1="${Y(gv).toFixed(1)}" x2="${W - R}" y2="${Y(gv).toFixed(1)}" stroke="var(--grid)"${dash}/>`);
+    g.push(`<text x="${L - 6}" y="${Y(gv).toFixed(1)}" fill="var(--muted)" font-size="10" text-anchor="end" dominant-baseline="middle">${gv.toFixed(2)}</text>`);
+  }
+  let prevMonth = null;
+  m.days.forEach((d, i) => {
+    const mk = d.slice(0, 7);
+    if (mk !== prevMonth) {
+      g.push(`<text x="${X(i).toFixed(1)}" y="${H - 8}" fill="var(--muted)" font-size="10" text-anchor="middle">${+mk.slice(5)}월</text>`);
+      prevMonth = mk;
+    }
+  });
+  const path = j => {
+    const pts = [];
+    for (let i = 0; i < m.days.length; i++) if (!isNaN(m.pi[i][j])) pts.push(`${X(i).toFixed(1)} ${Y(m.pi[i][j]).toFixed(1)}`);
+    return pts.length > 1 ? "M" + pts.join("L") : "";
+  };
+  const lines = [], ends = [];
+  m.unitIds.forEach((uid, j) => {
+    if (focus.includes(uid)) return;
+    const d = path(j); if (d) lines.push(`<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".35"/>`);
+  });
+  focus.forEach((uid, k) => {
+    const j = m.unitIds.indexOf(uid), c = HIGHLIGHT[k % HIGHLIGHT.length];
+    const d = path(j); if (!d) return;
+    lines.push(`<path d="${d}" fill="none" stroke="var(--${c})" stroke-width="2"/>`);
+    let last = -1;
+    for (let i = m.days.length - 1; i >= 0; i--) if (!isNaN(m.pi[i][j])) { last = i; break; }
+    if (last >= 0) ends.push({ y: Y(m.pi[last][j]), x: X(last) + 6, c, t: `${uid} ${m.pi[last][j].toFixed(2)}` });
+  });
+  const labels = endLabels(ends, T, T + ph).map(e =>
+    `<text x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}" fill="var(--${e.c})" font-size="11" font-weight="600" dominant-baseline="middle">${esc(e.t)}</text>`);
+  const legend = focus.map((uid, k) => `<span class="k"><i class="ln" style="background:var(--${HIGHLIGHT[k % 3]})"></i>${esc(uid)}</span>`).join("")
+    + `<span class="k"><i class="ln" style="background:var(--muted)"></i>기타 정상 채널</span>`
+    + `<span class="k">임계선 주의 0.97 / 저하 0.93</span>`;
+  return `<h2>일별 PI 추이</h2>
+<p class="note">문제 채널만 색으로 강조했습니다. 나머지는 회색으로 눌러 이야기가 하나로 읽히게 했습니다.</p>
+<div class="card"><div class="legend">${legend}</div><div class="scroll">
+<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g.join("")}${lines.join("")}${labels.join("")}</svg></div></div>`;
+}
+
+function hourProfileSvg(m, focus) {
+  if (!m.hours.length) return "";
+  const W = 620, H = 260, L = 44, R = 96, T = 16, B = 30;
+  const pw = W - L - R, ph = H - T - B;
+  const y0 = 0.4, y1 = 1.1;
+  const X = i => L + (m.hours.length < 2 ? pw / 2 : i / (m.hours.length - 1) * pw);
+  const Y = v => T + ph - (v - y0) / (y1 - y0) * ph;
+  const g = [];
+  for (const gv of [0.5, 0.75, 1.0]) {
+    g.push(`<line x1="${L}" y1="${Y(gv).toFixed(1)}" x2="${W - R}" y2="${Y(gv).toFixed(1)}" stroke="var(--grid)"/>`);
+    g.push(`<text x="${L - 6}" y="${Y(gv).toFixed(1)}" fill="var(--muted)" font-size="10" text-anchor="end" dominant-baseline="middle">${gv.toFixed(2)}</text>`);
+  }
+  m.hours.forEach((h, i) => { if (i % 2 === 0) g.push(`<text x="${X(i).toFixed(1)}" y="${H - 9}" fill="var(--muted)" font-size="10" text-anchor="middle">${h}시</text>`); });
+  const path = j => {
+    const pts = [];
+    m.hours.forEach((h, i) => { if (!isNaN(m.hourlyRatio[i][j])) pts.push(`${X(i).toFixed(1)} ${Y(m.hourlyRatio[i][j]).toFixed(1)}`); });
+    return pts.length > 1 ? "M" + pts.join("L") : "";
+  };
+  const lines = [], ends = [];
+  m.unitIds.forEach((uid, j) => {
+    if (focus.includes(uid)) return;
+    const d = path(j); if (d) lines.push(`<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1" opacity=".3"/>`);
+  });
+  focus.forEach((uid, k) => {
+    const j = m.unitIds.indexOf(uid), c = HIGHLIGHT[k % 3], d = path(j);
+    if (!d) return;
+    lines.push(`<path d="${d}" fill="none" stroke="var(--${c})" stroke-width="2"/>`);
+    let last = -1;
+    for (let i = m.hours.length - 1; i >= 0; i--) if (!isNaN(m.hourlyRatio[i][j])) { last = i; break; }
+    if (last >= 0) ends.push({ y: Y(m.hourlyRatio[last][j]), x: X(last) + 5, c, t: `${uid} ${m.hourlyRatio[last][j].toFixed(2)}` });
+  });
+  const labels = endLabels(ends, T, T + ph).map(e =>
+    `<text x="${e.x.toFixed(1)}" y="${e.y.toFixed(1)}" fill="var(--${e.c})" font-size="11" font-weight="600" dominant-baseline="middle">${esc(e.t)}</text>`);
+  return `<h2>시간대별 프로파일 <span style="font-weight:400;color:var(--ink2);font-size:13px">(최근 ${m.shapeWindow[0]} ~ ${m.shapeWindow[1]})</span></h2>
+<p class="note">형태로 원인을 구분합니다. <b>아침·저녁만 낮음</b>=음영, <b>전 시간대 균등 낮음</b>=열화·오염,
+<b>정오만 낮음</b>=과열 derating·클리핑.</p>
+<div class="card"><div class="scroll">
+<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g.join("")}${lines.join("")}${labels.join("")}</svg></div></div>`;
+}
+
+function eventTable(m, events) {
+  if (!events.length) return `<h2>이상 이벤트</h2><div class="card"><p class="note">검출된 이벤트가 없습니다.</p></div>`;
+  return `<h2>이상 이벤트 (${events.length}건)</h2>
+<div class="card"><div class="scroll"><table>
+<thead><tr><th class="lc">채널</th><th class="lc">판정</th><th class="lc">유형</th>
+<th class="lc">구간</th><th>손실 ${m.unit}</th><th class="l">해석 및 조치</th></tr></thead>
+<tbody>${events.map(e => `<tr><td class="lc"><b>${esc(e.unitId)}</b></td><td class="lc">${sevChip(e.severity)}</td>
+<td class="lc">${KIND_LABEL[e.kind] || e.kind}</td><td class="lc">${e.start} ~ ${e.end}</td>
+<td>${fmt(e.lossKwh)}</td><td class="l">${esc(e.note)}</td></tr>`).join("")}</tbody></table></div></div>`;
+}
+
+function monthlyTable(m) {
+  if (!m.months.length) return "";
+  return `<h2>월별 PI 표</h2>
+<p class="note">위 히트맵과 동일한 데이터의 표 버전입니다 (월 단위 중앙값). 0.93 미만은 굵게 표시했습니다.</p>
+<div class="card"><div class="scroll"><table>
+<thead><tr><th class="lc">채널</th>${m.months.map(k => `<th>${k}</th>`).join("")}</tr></thead>
+<tbody>${m.unitIds.map((uid, j) => `<tr><td class="lc"><b>${esc(uid)}</b></td>${m.months.map((k, mi) => {
+    const v = m.monthlyPi[mi][j];
+    return `<td${!isNaN(v) && v < PI_LOW ? ' style="font-weight:660"' : ""}>${isNaN(v) ? "-" : v.toFixed(2)}</td>`;
+  }).join("")}</tr>`).join("")}</tbody></table></div></div>`;
+}
+
+function appendix(ds, qc, m) {
+  const excluded = ds.units.filter(u => u.status !== "active");
+  return `<h2>부록 · 계산 근거와 데이터 품질</h2>
+<div class="card">
+<details open><summary>판정 기준</summary><ul class="plain">
+<li>기준값 = 같은 인버터 내 <b>정상 채널의 중앙값</b> (평균·표준편차를 쓰지 않는 이유: 고장 채널이 기준을 오염시켜 고장을 숨김)</li>
+<li>PI 임계값 — 주의 ${PI_WARN} 미만 · 저하 ${PI_LOW} 미만 · 심각 ${PI_CRIT} 미만</li>
+<li>손실은 <b>일 적산</b> 기준이며 기준값의 3%까지는 정상 산포로 보고 계산하지 않음</li>
+<li>저일사 날짜 ${m.nDropped}일 제외 (기준 발전량이 상위 10% 일자의 20% 미만인 날 — PI 자체가 불안정)</li>
+<li>단위 환산 — ${esc(m.convNote)}</li>
+<li>시간대 프로파일은 최근 ${m.shapeWindow[0]} ~ ${m.shapeWindow[1]} 구간 (기간 중 고장이 나면 전체 평균은 고장 전후가 섞여 원인 판별 불가)</li>
+</ul></details>
+<details><summary>구성 세그먼트 (배선 변경 확인)</summary><ul class="plain">
+${qc.segments.map((s, i) => `<li>구간${i + 1} ${s.start} ~ ${s.end} (${s.nDays}일) 활성 ${s.activeUnits.length}채널</li>`).join("") || "<li>구성 변화 없음</li>"}
+</ul></details>
+<details><summary>데이터 품질 요약</summary><dl class="dl">
+${Object.entries(qc.flags).map(([k, v]) => `<dt>${k}</dt><dd>${v.toLocaleString("ko-KR")}</dd>`).join("")}
+</dl></details>
+<details><summary>분석에서 제외된 채널</summary><ul class="plain">
+${excluded.map(u => `<li><b>${esc(u.unitId)}</b> [${u.status}] ${esc(u.reason)}</li>`).join("") || "<li>없음</li>"}
+</ul></details>
+</div>`;
+}
+
+/* ── 9) 샘플 데이터 ──────────────────────────────────────────────────
+   방문자가 자기 파일 없이도 결과를 볼 수 있게 한다. 실제 현장에서 흔한
+   네 가지 고장을 심어 두었고, 분석은 업로드 파일과 완전히 같은 경로를 탄다. */
+function sampleGrid() {
+  // 겨울을 기간 '중간'에 두는 것이 중요하다. 데이터가 겨울에서 끝나면 회복을
+  // 관측할 수 없어 '동절기 한정(결함 아님)' 을 판정할 수 없고, 계단식 하락으로만 보인다.
+  const N_CH = 12, DAYS = 300;
+  const start = Date.UTC(2025, 10, 1);          // 2025-11-01 ~ 2026-08-27
+  const chans = Array.from({ length: N_CH }, (_, i) => "CH" + String(i + 1).padStart(2, "0"));
+  const grid = [["시간", ...chans.map(c => `${c} (A)`)]];
+  let seed = 20260808;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+
+  for (let d = 0; d < DAYS; d++) {
+    const t0 = start + d * 86400000;
+    const dt = new Date(t0), month = dt.getUTCMonth() + 1;
+    const doy = Math.floor((t0 - Date.UTC(dt.getUTCFullYear(), 0, 1)) / 86400000);
+    const season = 0.70 + 0.30 * Math.sin((doy - 80) / 365 * 2 * Math.PI);   // 계절 진폭
+    const cloud = rnd() < 0.32 ? 0.18 + rnd() * 0.55 : 0.90 + rnd() * 0.12;  // 흐린 날 섞기
+    const dayLen = 11.0 + 2.6 * Math.sin((doy - 80) / 365 * 2 * Math.PI);    // 일장 변화
+    for (let h = 0; h < 24; h++) {
+      const arc = Math.sin(Math.PI * (h - (12 - dayLen / 2)) / dayLen);
+      const base = arc > 0 ? 16.5 * season * cloud * arc : 0;
+      const row = [new Date(t0 + h * 3600000)];
+      for (let c = 0; c < N_CH; c++) {
+        let f = 1.0, miss = false;
+        if (c === 0 && d >= 200) f = 0.26;                            // 퓨즈 단선 (계단식 하락)
+        if (c === 1 && (month === 12 || month === 1)) f = 0.55;       // 동절기 한정 그림자 (결함 아님)
+        if (c === 4 && (h <= 9 || h >= 15)) f = 0.52;                 // 오후·아침 고정 음영
+        if (c === 6) f = 1.0 - 0.00075 * d;                           // 점진 열화 (PID·오염 누적)
+        if (c === 9 && d >= 250 && d <= 252 && h >= 10 && h <= 14) miss = true;  // 통신 단절
+        if (miss) { row.push(null); continue; }
+        const v = base * f * (0.985 + rnd() * 0.03);
+        row.push(base <= 0 ? 0 : Math.round(v * 100) / 100);
+      }
+      grid.push(row);
+    }
+  }
+  return { grid, sheet: "샘플" };
+}
+
+/* ── 10) 앱 ─────────────────────────────────────────────────────────── */
+const $ = s => document.querySelector(s);
+const statusEl = $("#status"), reportEl = $("#report");
+
+function setStatus(msg, kind) {
+  statusEl.className = "status" + (kind === "err" ? " err" : "");
+  statusEl.innerHTML = kind === "busy" ? `<span class="spin"></span>${esc(msg)}` : esc(msg);
+}
+
+function stringVolt() {
+  const v = parseFloat(($("#volt")?.value || "").replace(/[^0-9.]/g, ""));
+  return isFinite(v) && v > 0 ? v : null;
+}
+
+async function runAnalysis(parsed, name) {
+  const t0 = performance.now();
+  const { grid } = parsed;
+  if (grid.length < 10) throw new Error("데이터 행이 너무 적습니다.");
+  const prof = inferProfile(grid);
+  const ds = buildDataset(grid, prof);
+  const nAct = ds.activeIndex().length;
+
+  if (nAct < 2) {
+    reportEl.innerHTML = `<h2 style="margin-top:52px">이 파일은 상호비교 대상이 없습니다</h2>
+<div class="card"><p class="note" style="font-size:13.5px">
+읽어낸 측정 채널이 <b>${nAct}개</b>뿐입니다. 이 도구는 <b>같은 인버터 안의 스트링끼리 비교</b>해서
+저하 채널을 찾아내는 방식이라, 비교할 상대가 없으면 판정이 성립하지 않습니다
+(자기 자신으로 나누면 항상 1.00이 됩니다).<br><br>
+<b>인버터 단위로만 계측된 데이터</b>라면 스트링별 데이터를 받아 다시 시도하시거나,
+같은 발전소의 다른 인버터 데이터를 함께 확보하셔야 합니다. 문의 주시면 안내드리겠습니다.
+</p><details><summary>읽어낸 컬럼 확인</summary><ul class="plain">
+${prof.cols.filter(c => c.role === "measure").map(c => `<li>${esc(c.label)} — ${c.metric || "미분류"}</li>`).join("") || "<li>측정 컬럼을 찾지 못했습니다</li>"}
+</ul></details></div>`;
+    setStatus(`채널 ${nAct}개 — 스트링 상호비교를 할 수 없습니다.`, "err");
+    reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  const qc = runQc(ds);
+  let seg = null, segNote = "";
+  if (qc.segments.length > 1) {
+    seg = qc.segments.reduce((a, b) => b.nDays > a.nDays ? b : a);
+    segNote = ` · 배선 구성이 바뀌어 가장 긴 구간(${seg.start} ~ ${seg.end})만 분석했습니다`;
+  }
+  const m = computeMetrics(ds, qc, seg, stringVolt());
+  const det = analyzeDetect(m);
+
+  reportEl.innerHTML = renderReport(ds, qc, m, det, { name, site: "스트링 상호비교 분석" + segNote });
+  bindTooltip();
+  const nBad = det.summaries.filter(s => s.severity !== "good").length;
+  const ms = Math.round(performance.now() - t0);
+  setStatus(`분석 완료 — ${m.days.length}일 · 채널 ${m.unitIds.length}개 · 이상 ${nBad}개 · 이벤트 ${det.events.length}건 (${ms}ms)`);
+  reportEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function handleFile(file) {
+  try {
+    setStatus(`${file.name} 읽는 중…`, "busy");
+    await new Promise(r => setTimeout(r, 30));
+    const lower = file.name.toLowerCase();
+    let parsed;
+    if (lower.endsWith(".csv")) parsed = readCsv(await file.text());
+    else if (lower.endsWith(".xlsx") || lower.endsWith(".xlsm")) parsed = await readXlsx(await file.arrayBuffer());
+    else throw new Error("지원하지 않는 형식입니다. xlsx 또는 csv 파일을 올려주세요.");
+    setStatus("분석 중…", "busy");
+    await new Promise(r => setTimeout(r, 30));
+    await runAnalysis(parsed, file.name);
+  } catch (e) {
+    console.error(e);
+    reportEl.innerHTML = "";
+    setStatus("분석하지 못했습니다 — " + (e.message || e), "err");
+  }
+}
+
+function bindTooltip() {
+  const tip = $("#tip");
+  reportEl.querySelectorAll("rect.hc").forEach(r => {
+    r.addEventListener("mouseenter", ev => {
+      const d = ev.target.dataset;
+      tip.innerHTML = `<b>${esc(d.u)}</b> · ${d.d}<br>PI ${d.v} · 손실 ${d.l}`;
+      tip.style.opacity = "1";
+    });
+    r.addEventListener("mousemove", ev => {
+      tip.style.left = Math.min(window.innerWidth - 170, ev.clientX + 14) + "px";
+      tip.style.top = Math.max(8, ev.clientY - 46) + "px";
+    });
+    r.addEventListener("mouseleave", () => { tip.style.opacity = "0"; });
+  });
+}
+
+// 이벤트 배선
+const drop = $("#drop"), fileInput = $("#file");
+$("#pickbtn").addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+
+$("#samplebtn").addEventListener("click", async () => {
+  try {
+    setStatus("샘플 데이터 생성 중…", "busy");
+    await new Promise(r => setTimeout(r, 30));
+    await runAnalysis(sampleGrid(), "샘플 데이터 (12스트링 · 200일)");
+  } catch (e) {
+    console.error(e);
+    setStatus("샘플 분석 실패 — " + (e.message || e), "err");
+  }
+});
+
+$("#printbtn").addEventListener("click", () => window.print());
+$("#themebtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : cur === "light" ? "" : "dark";
+  if (next) document.documentElement.setAttribute("data-theme", next);
+  else document.documentElement.removeAttribute("data-theme");
+  try { localStorage.setItem("sdc-theme", next); } catch (e) {}
+});
+try {
+  const saved = localStorage.getItem("sdc-theme");
+  if (saved) document.documentElement.setAttribute("data-theme", saved);
+} catch (e) {}
+</script>
+</body>
+</html>
