@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#17312b" />
+    <meta name="description" content="KMA 일사량과 시간자료를 이용한 경사면 일사량·태양광 예상발전량 분석 및 Excel·PPT 보고서 생성" />
+    <title>태양광 일사량·발전량 분석 V01</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script defer src="vendor/chart.umd.js"></script>
+    <script defer src="vendor/xlsx.full.min.js"></script>
+    <script defer src="vendor/pptxgen.bundle.js"></script>
+    <script defer src="vendor/exceljs.min.js"></script>
+    <script defer src="data/kma-monthly.js"></script>
+    <script defer src="assets/solar-engine.js"></script>
+    <script defer src="assets/data-import.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <p class="eyebrow">SOLAR DESIGN LAB</p>
+          <h1>태양광 일사량·발전량 분석 <small>V01</small></h1>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="connection-pill"><i></i><span id="connectionState">로컬 우선</span></div>
+        <select id="savedProfiles" aria-label="저장된 설계안"></select>
+        <button class="ghost-button protected-action" id="saveProfile" type="button"><span aria-hidden="true">⌁</span> 설계안 저장</button>
+        <button class="ghost-button protected-action" id="loadProfileButton" type="button"><span aria-hidden="true">⌁</span> 설정 불러오기</button>
+        <input id="loadProfileFile" class="visually-hidden" type="file" accept=".json,application/json" />
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="control-panel" aria-label="분석 조건">
+        <div class="panel-intro">
+          <div>
+            <p class="eyebrow">INPUT PROFILE</p>
+            <h2>분석 조건</h2>
+          </div>
+          <span class="mode-badge" id="modeBadge">KMA 월자료 표준모드</span>
+        </div>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span class="step">01</span>
+            <div><h3>일사량 자료</h3><p>기본자료 또는 시간자료를 선택합니다.</p></div>
+          </div>
+          <div class="segmented" role="radiogroup" aria-label="자료 모드">
+            <label><input type="radio" name="dataMode" value="kma" checked /><span>KMA 월자료</span></label>
+            <label><input type="radio" name="dataMode" value="hourly" /><span>시간자료</span></label>
+          </div>
+
+          <div id="kmaControls" class="mode-controls">
+            <div class="field-grid two">
+              <label class="field"><span>지역</span><select id="region"></select></label>
+              <label class="field"><span>기준 프로파일</span><select id="profileYear"></select></label>
+            </div>
+            <p class="source-note"><strong id="datasetMeta"></strong><br />기상청 기반 지역 평균 수평면 일사량</p>
+          </div>
+
+          <div id="hourlyControls" class="mode-controls" hidden>
+            <label class="field"><span>입력 단위</span>
+              <select id="importUnit">
+                <option value="auto">자동 판별</option>
+                <option value="wm2">평균 일사강도 (W/m²)</option>
+                <option value="mj">구간 일사에너지 (MJ/m²)</option>
+                <option value="kwh">구간 일사에너지 (kWh/m²)</option>
+              </select>
+            </label>
+            <label class="drop-zone" id="dropZone">
+              <input id="hourlyFile" type="file" accept=".xlsx,.xls,.csv,.tsv" />
+              <span class="upload-icon" aria-hidden="true">↥</span>
+              <strong>KMA·위성 시간자료 가져오기</strong>
+              <small>CSV, XLSX · 일시와 GHI 열 자동 인식</small>
+            </label>
+            <div class="import-status" id="importStatus">
+              <strong>아직 가져온 자료가 없습니다.</strong>
+              <span>DNI·DHI가 없으면 GHI에서 자동 분리합니다.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span class="step">02</span>
+            <div><h3>설치 위치·용량</h3><p>실제 부지의 좌표를 입력하세요.</p></div>
+          </div>
+          <label class="field"><span>프로젝트명</span><input id="siteName" type="text" value="태양광 발전소 설계안" /></label>
+          <div class="field-grid two">
+            <label class="field"><span>위도</span><input id="latitude" type="number" step="0.0001" /></label>
+            <label class="field"><span>경도</span><input id="longitude" type="number" step="0.0001" /></label>
+          </div>
+          <p class="field-hint" id="coordinateHint"></p>
+          <div class="field-grid two">
+            <label class="field"><span>표준시간대</span><input id="timezone" type="number" value="9" min="-12" max="14" step="1" /></label>
+            <label class="field"><span>설치용량 (kW)</span><input id="capacityKw" type="number" value="1000" min="0.001" step="10" /></label>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span class="step">03</span>
+            <div><h3>어레이 방향</h3><p>방위각은 북 0°·동 90°·남 180° 기준입니다.</p></div>
+          </div>
+          <div class="orientation-card">
+            <div class="compass" aria-label="선택한 방위각">
+              <span class="north">N</span><span class="east">E</span><span class="south">S</span><span class="west">W</span>
+              <div class="compass-ring"></div>
+              <div class="compass-needle" id="compassNeedle"><i></i></div>
+              <strong id="azimuthReadout">180°</strong>
+            </div>
+            <div class="orientation-fields">
+              <label class="field range-field"><span>경사각 <b id="tiltReadout">25°</b></span><input id="tilt" type="range" value="25" min="0" max="90" step="1" /></label>
+              <label class="field range-field"><span>방위각</span><input id="azimuth" type="range" value="180" min="0" max="359" step="1" /></label>
+              <div class="direction-presets">
+                <button type="button" data-azimuth="90">동</button>
+                <button type="button" data-azimuth="135">남동</button>
+                <button type="button" data-azimuth="180">남</button>
+                <button type="button" data-azimuth="225">남서</button>
+                <button type="button" data-azimuth="270">서</button>
+              </div>
+            </div>
+          </div>
+          <label class="field"><span>지면반사율 (%)</span><input id="albedo" type="number" value="20" min="0" max="100" step="1" /></label>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <span class="step">04</span>
+            <div><h3>시스템·모듈</h3><p>손실과 장기 열화를 반영합니다.</p></div>
+          </div>
+          <div class="preset-row" aria-label="분석 가정 프리셋">
+            <button type="button" class="preset-button" data-preset="conservative">보수적</button>
+            <button type="button" class="preset-button active" data-preset="standard">표준</button>
+            <button type="button" class="preset-button" data-preset="optimistic">낙관적</button>
+          </div>
+          <div class="field-grid two">
+            <label class="field"><span>시스템효율 (%)</span><input id="systemEfficiency" type="number" value="82" min="1" max="100" step="0.1" /></label>
+            <label class="field"><span>분석기간 (년)</span><input id="projectionYears" type="number" value="25" min="1" max="50" step="1" /></label>
+            <label class="field"><span>초기 모듈저하 (%)</span><input id="initialDegradation" type="number" value="1" min="0" max="25" step="0.1" /></label>
+            <label class="field"><span>연간 모듈저하 (%)</span><input id="annualDegradation" type="number" value="0.5" min="0" max="5" step="0.05" /></label>
+          </div>
+          <div class="temperature-panel disabled" id="temperaturePanel">
+            <label class="switch-row"><span><strong>온도보정</strong><small>시간자료에 기온 열이 있을 때 적용</small></span><input id="useTemperature" type="checkbox" disabled /><i></i></label>
+            <div class="field-grid two">
+              <label class="field"><span>출력 온도계수 (%/°C)</span><input id="temperatureCoefficient" type="number" value="-0.35" min="-1" max="0" step="0.01" /></label>
+              <label class="field"><span>모듈 NOCT (°C)</span><input id="noct" type="number" value="45" min="30" max="60" step="1" /></label>
+            </div>
+          </div>
+        </section>
+
+        <button class="calculate-button" id="calculateButton" type="button"><span>분석 실행</span><i>→</i></button>
+      </aside>
+
+      <section class="results-panel" aria-live="polite">
+        <div class="empty-state" id="emptyState" hidden>
+          <div class="empty-orbit"><span></span></div>
+          <h2>분석 조건을 입력해 주세요.</h2>
+          <p>KMA 월자료 또는 시간자료를 선택하면 경사면 일사량과 예상발전량을 계산합니다.</p>
+        </div>
+
+        <div id="resultsContent">
+          <div class="result-header">
+            <div>
+              <p class="eyebrow">ANALYSIS REPORT</p>
+              <h2 id="resultTitle">태양광 발전소 설계안</h2>
+              <p id="resultSubtitle">기상청 자료 기반</p>
+            </div>
+            <div class="result-actions">
+              <span class="quality-badge" id="qualityBadge">표준</span>
+              <button class="icon-button" id="exportExcel" type="button">Excel 내보내기</button>
+              <button class="icon-button protected-action" id="exportPpt" type="button"><span aria-hidden="true">⌁</span> PPT 보고서</button>
+              <button class="icon-button protected-action" id="exportProfile" type="button"><span aria-hidden="true">⌁</span> 설정 파일</button>
+              <button class="icon-button" id="printReport" type="button">인쇄·PDF</button>
+            </div>
+          </div>
+
+          <div class="summary-grid">
+            <article class="summary-card primary"><span id="annualPoaLabel">연간 경사면 일사량</span><strong id="annualPoa">—</strong><small>수평면 대비 <b id="poaGain">—</b></small></article>
+            <article class="summary-card accent"><span id="selectedYearEnergyLabel">1년차 예상발전량</span><strong id="selectedYearEnergy">—</strong><small id="selectedYearEnergyNote">초기 모듈저하 반영</small></article>
+            <article class="summary-card"><span>예상 등가발전시간</span><strong id="equivalentHours">—</strong><small id="equivalentHoursNote">조회년차 연평균 h/일</small></article>
+            <article class="summary-card"><span id="lifetimeLabel">분석기간 누적발전량</span><strong id="lifetimeEnergy">—</strong><small id="summaryFootnote"></small></article>
+          </div>
+
+          <article class="overview-card">
+            <div class="card-heading"><div><p class="eyebrow">PROJECT SNAPSHOT</p><h3>분석 조건 요약</h3></div><span id="analysisModeText">KMA 월자료</span></div>
+            <div class="assumption-grid" id="assumptionGrid"></div>
+            <div class="insight-banner"><span>분석 포인트</span><p id="resultInsight">선택한 조건의 발전 프로파일을 계산했습니다.</p></div>
+          </article>
+
+          <article class="chart-card wide-chart monthly-profile-card">
+            <div class="card-heading">
+              <div><p class="eyebrow">ENERGY PROFILE</p><h3>월별 예상발전량</h3><p class="card-description">모듈저하율을 반영한 조회년차의 월별 발전 프로파일입니다.</p></div>
+              <label class="inline-select"><span>조회년차</span><select id="viewYear" aria-label="월별 발전량 조회년차"></select></label>
+            </div>
+            <div class="chart-wrap large-chart"><canvas id="monthlyEnergyChart"></canvas></div>
+          </article>
+
+          <article class="table-card monthly-table-card">
+            <div class="card-heading"><div><p class="eyebrow">MONTHLY DATA</p><h3 id="monthlyTableTitle">1년차 월별 발전량</h3></div><span>조회년차 연동</span></div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th>월</th><th>예상발전량</th><th>연간 비중</th><th>등가발전시간<br /><small>h/일</small></th><th>누적발전량</th></tr></thead>
+                <tbody id="monthlyTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="heatmap-card">
+            <div class="card-heading">
+              <div><p class="eyebrow">DESIGN MATRIX</p><h3>경사각·방위각별 발전량 비교</h3></div>
+              <p id="heatmapBest"></p>
+            </div>
+            <div class="table-scroll"><table class="heatmap" id="heatmapTable"></table></div>
+          </article>
+
+          <article class="chart-card wide-chart lifetime-chart-card">
+            <div class="card-heading"><div><p class="eyebrow">LIFETIME PROFILE</p><h3>연차별 발전량·누적량</h3><p class="card-description">초기 및 연간 모듈저하율이 장기 발전량에 미치는 영향을 보여줍니다.</p></div><span>열화 반영</span></div>
+            <div class="chart-wrap large-chart"><canvas id="degradationChart"></canvas></div>
+          </article>
+
+          <article class="table-card yearly-table-card">
+            <div class="card-heading"><div><p class="eyebrow">YEARLY DATA</p><h3>년차별 예상발전량</h3></div><span id="yearlyTableTag">25년 분석</span></div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead><tr><th>년차</th><th>모듈 잔존율</th><th>연간 예상발전량</th><th>전년 대비</th><th>등가발전시간<br /><small>h/일</small></th><th>누적발전량</th></tr></thead>
+                <tbody id="yearlyTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="method-card">
+            <button type="button" id="methodToggle"><span><b>계산 방법과 결과 해석</b><small>모델, 단위, 정확도 등급을 확인하세요.</small></span><i>＋</i></button>
+            <div class="method-panel" id="methodPanel">
+              <div><strong>수평면 → 경사면</strong><p>월자료는 Erbs 상관식으로 직달·산란 성분을 분리하고 Hay-Davies 모델로 경사면 일사량을 계산합니다. 시간자료는 각 시각의 태양 고도·방위와 입사각을 적용합니다.</p></div>
+              <div><strong>발전량</strong><p>경사면 일사량 × 설치용량 × 시스템효율 × 온도보정 × 모듈잔존율로 계산합니다. 시스템효율에는 인버터·배선·오염·음영·불일치·가동률 손실을 종합해 입력합니다.</p></div>
+              <div><strong>등가발전시간</strong><p>조회년차 예상발전량을 설치용량과 해당 연도의 일수로 나눈 값입니다. 정격용량으로 매일 몇 시간 발전한 것과 같은 에너지인지 직관적으로 보여줍니다.</p></div>
+              <div><strong>정확도와 활용범위</strong><p>지역 월자료 결과는 초기 사업성·설계 비교용입니다. 실시설계에는 실제 좌표, 인근 관측소 또는 위성 시간자료, 현장 음영, 모듈·인버터 상세정보로 재분석해야 합니다.</p></div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>모든 계산은 이 기기에서 수행됩니다. 입력 파일은 외부로 전송되지 않습니다.</p>
+      <p>기본자료: 기상청 기상자료개방포털 기반 사용자 제공 2016–2025 지역별 수평면 일사량</p>
+    </footer>
+    <div class="modal-backdrop" id="passwordModal" hidden>
+      <section class="password-dialog" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+        <div class="lock-symbol" aria-hidden="true">⌁</div>
+        <p class="eyebrow">PROTECTED FUNCTION</p>
+        <h2 id="passwordTitle">비밀번호 확인</h2>
+        <p><strong id="passwordAction">보호된 기능</strong>을 실행하려면 비밀번호를 입력하세요.</p>
+        <label class="field"><span>비밀번호</span><input id="passwordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="20" /></label>
+        <p class="password-error" id="passwordError" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="ghost-button" id="passwordCancel" type="button">취소</button>
+          <button class="calculate-button compact" id="passwordConfirm" type="button"><span>확인</span><i>→</i></button>
+        </div>
+      </section>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+  </body>
+</html>
