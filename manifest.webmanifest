@@ -1,0 +1,15 @@
+{
+  "name": "태양광 일사량·발전량 분석 V01",
+  "short_name": "태양광 분석 V01",
+  "description": "경사면 일사량과 태양광 예상발전량 분석 및 Excel·PPT 보고서 생성",
+  "lang": "ko-KR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef1e9",
+  "theme_color": "#17312b",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
